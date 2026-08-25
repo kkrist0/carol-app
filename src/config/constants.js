@@ -196,3 +196,17 @@ export const EVENT_TYPES = [
   { id: "unatantum", l: "Una tantum", icona: "✨", colore: "#93C5FD" },
 ];
 export const evType = (id) => EVENT_TYPES.find((e) => e.id === id) || EVENT_TYPES[1];
+
+export const SUPPORTED_CURRENCIES = [
+  { code: "EUR", symbol: "€", name: "Euro", locale: "it-IT" },
+  { code: "USD", symbol: "$", name: "Dollaro Statunitense", locale: "en-US" },
+  { code: "CHF", symbol: "CHF", name: "Franco Svizzero", locale: "de-CH" },
+  { code: "GBP", symbol: "£", name: "Sterlina Britannica", locale: "en-GB" },
+];
+
+export const DEFAULT_EXCHANGE_RATES = {
+  EUR: 1,
+  USD: 1.08,
+  CHF: 0.96,
+  GBP: 0.85,
+};

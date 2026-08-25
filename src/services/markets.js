@@ -1,3 +1,5 @@
+import { DEFAULT_EXCHANGE_RATES } from "../config/constants";
+
 const ETF_CATALOG = [
   { t: "VWCE", isin: "IE00BK5BQT80", nome: "Vanguard FTSE All-World UCITS ETF (USD) Acc", borsa: "Borsa italiana", val: "EUR", em: "Vanguard", cat: "Azionario globale", area: "Globale", settore: "Diversificato", y: "VWCE.MI", s: "vwce.uk" },
   { t: "VFEA", isin: "IE00BK5BR733", nome: "Vanguard FTSE Emerging Markets UCITS ETF (USD) Acc", borsa: "Borsa italiana", val: "EUR", em: "Vanguard", cat: "Azionario emergenti", area: "Globale", settore: "Diversificato", y: "VFEA.MI", s: "vfea.uk" },
@@ -248,6 +250,27 @@ class MarketDataService {
     const s = (q || "").trim().toUpperCase();
     if (s.length < 2) return [];
     return ETF_CATALOG.filter((e) => e.t.includes(s) || e.isin.includes(s) || e.nome.toUpperCase().includes(s) || e.em.toUpperCase().includes(s)).slice(0, 8);
+  }
+  /** Recupera i tassi di cambio per le valute supportate basandosi su EUR */
+  async getExchangeRates() {
+    try {
+      const r = await fetchConTimeout(
+        "https://open.er-api.com/v6/latest/EUR",
+        6000
+      );
+      const j = await r.json();
+
+      if (j && j.rates) {
+        return {
+          ...DEFAULT_EXCHANGE_RATES,
+          ...j.rates,
+        };
+      }
+      return DEFAULT_EXCHANGE_RATES;
+    } catch (e) {
+      console.warn("Impossibile recuperare i tassi online, uso i tassi standard:", e);
+      return DEFAULT_EXCHANGE_RATES;
+    }
   }
 };
 

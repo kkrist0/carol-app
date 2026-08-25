@@ -1,4 +1,5 @@
-export const eur = (n) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n || 0);
+import { DEFAULT_EXCHANGE_RATES, SUPPORTED_CURRENCIES } from "../config/constants";
+
 export const eur0 = (n) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n || 0);
 export const fmtDate = (d) => new Date(d).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" });
 export const monthKey = (d) => { const x = new Date(d); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}`; };
@@ -20,3 +21,48 @@ export const annoCorr = String(new Date().getFullYear());
 export const dayCount = (a, b) => { if (!a || !b) return 0; const d = Math.round((new Date(b + "T12:00") - new Date(a + "T12:00")) / 86400000) + 1; return d > 0 ? d : 0; };
 export const tripStatus = (t) => { const o = todayISO(); return t.partenza > o ? "futuro" : t.ritorno < o ? "passato" : "corso"; };
 export const daysTo = (d) => Math.ceil((new Date(d + "T00:00") - new Date(todayISO() + "T00:00")) / 86400000);
+
+export function applyTheme(theme = 'dark') {
+  const root = document.documentElement;
+  if (theme === 'light') {
+    root.classList.add('light-theme');
+    root.classList.remove('dark-theme');
+  } else {
+    root.classList.add('dark-theme');
+    root.classList.remove('light-theme');
+  }
+};
+
+export let CURRENT_CURRENCY = "EUR";
+export let EXCHANGE_RATES = DEFAULT_EXCHANGE_RATES;
+
+export function setGlobalCurrency(currency = "EUR", rates = DEFAULT_EXCHANGE_RATES) {
+  CURRENT_CURRENCY = currency;
+  if (rates && typeof rates === "object") {
+    EXCHANGE_RATES = { ...DEFAULT_EXCHANGE_RATES, ...rates };
+  }
+}
+
+export function eur(val, currency, rates) {
+  if (val == null || isNaN(val)) val = 0;
+
+  const activeCurrency = currency || CURRENT_CURRENCY;
+  const activeRates = (rates && Object.keys(rates).length > 0) ? rates : EXCHANGE_RATES;
+
+  const currInfo =
+    SUPPORTED_CURRENCIES.find((c) => c.code === activeCurrency) ||
+    SUPPORTED_CURRENCIES[0];
+
+  const rate = activeRates[activeCurrency] ?? 1;
+  const convertedVal = val * rate;
+
+  const formatted = new Intl.NumberFormat("it-IT", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(convertedVal);
+
+  if (activeCurrency === "USD" || activeCurrency === "GBP") {
+    return `${currInfo.symbol} ${formatted}`;
+  }
+  return `${formatted} ${currInfo.symbol}`;
+}

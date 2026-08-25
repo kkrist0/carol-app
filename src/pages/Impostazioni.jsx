@@ -5,7 +5,7 @@ import { marketData, viaPonte } from "../services/markets";
 import { Card } from "../components/Card";
 import { BtnPrimary, BtnGhost } from "../components/Buttons";
 import { Input, Select, Label } from "../components/Forms";
-import { freshData } from "../config/constants";
+import { freshData, SUPPORTED_CURRENCIES } from "../config/constants";
 import { Spinner } from "../components/Spinner";
 
 export function Impostazioni({
@@ -45,168 +45,8 @@ export function Impostazioni({
         </h1>
       </header>
 
-      <Card className="p-5 mb-4" hover={false} delay={30}>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="font-display text-white">Sincronizzazione Cloud</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Salva i dati su Google Sheets o Supabase.
-            </p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={syncCfg.enabled}
-              onChange={(e) =>
-                saveSyncCfg({ ...syncCfg, enabled: e.target.checked })
-              }
-            />
-            <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-400"></div>
-          </label>
-        </div>
-
-        {syncCfg.enabled && (
-          <div
-            className="space-y-3 mt-4 pt-4 border-t border-white/5"
-            style={{ animation: "fadeIn .3s both" }}
-          >
-            <div>
-              <Label>Database Remoto</Label>
-              <Select
-                value={syncCfg.provider || "sheets"}
-                onChange={(e) =>
-                  saveSyncCfg({ ...syncCfg, provider: e.target.value })
-                }
-              >
-                <option value="sheets">Google Sheets (Apps Script)</option>
-                <option value="supabase">Supabase (PostgreSQL)</option>
-              </Select>
-            </div>
-
-            {!syncCfg.provider || syncCfg.provider === "sheets" ? (
-              <div
-                className="grid sm:grid-cols-2 gap-3"
-                style={{ animation: "fadeIn .2s both" }}
-              >
-                <div>
-                  <Label>URL App Web (Google)</Label>
-                  <Input
-                    value={syncCfg.url || ""}
-                    onChange={(e) =>
-                      saveSyncCfg({ ...syncCfg, url: e.target.value })
-                    }
-                    placeholder="https://script.google.com/..."
-                  />
-                </div>
-                <div>
-                  <Label>Token Sicurezza</Label>
-                  <Input
-                    type="password"
-                    value={syncCfg.token || ""}
-                    onChange={(e) =>
-                      saveSyncCfg({ ...syncCfg, token: e.target.value })
-                    }
-                    placeholder="Il tuo token segreto"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div
-                className="grid sm:grid-cols-2 gap-3"
-                style={{ animation: "fadeIn .2s both" }}
-              >
-                <div>
-                  <Label>Supabase Project URL</Label>
-                  <Input
-                    value={syncCfg.supabaseUrl || ""}
-                    onChange={(e) =>
-                      saveSyncCfg({ ...syncCfg, supabaseUrl: e.target.value })
-                    }
-                    placeholder="https://xyz.supabase.co"
-                  />
-                </div>
-                <div>
-                  <Label>Anon Public Key</Label>
-                  <Input
-                    type="password"
-                    value={syncCfg.supabaseKey || ""}
-                    onChange={(e) =>
-                      saveSyncCfg({ ...syncCfg, supabaseKey: e.target.value })
-                    }
-                    placeholder="eyJh..."
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 rounded-xl bg-white/5 border border-white/10">
-              <div className="flex items-center gap-2 text-sm text-slate-300">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    syncState === "error"
-                      ? "bg-rose-400"
-                      : pendingPush
-                      ? "bg-amber-400"
-                      : syncState === "ok"
-                      ? "bg-emerald-400"
-                      : "bg-slate-500"
-                  }`}
-                ></span>
-                {syncState === "pulling"
-                  ? "Lettura..."
-                  : syncState === "pushing"
-                  ? "Scrittura..."
-                  : syncState === "error"
-                  ? "Errore di sync"
-                  : pendingPush
-                  ? "In attesa..."
-                  : syncCfg.lastSync
-                  ? `Sincronizzato (${new Date(
-                      syncCfg.lastSync
-                    ).toLocaleDateString("it-IT")} ${new Date(
-                      syncCfg.lastSync
-                    ).toLocaleTimeString("it-IT", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })})`
-                  : "Mai sincronizzato"}
-              </div>
-              <div className="flex gap-2">
-                <BtnGhost
-                  onClick={pullNow}
-                  disabled={syncState === "pulling" || syncState === "pushing"}
-                  className="py-1.5! text-xs!"
-                >
-                  ⬇ Ricevi
-                </BtnGhost>
-                <BtnPrimary
-                  onClick={() => pushNow(data, false)}
-                  disabled={syncState === "pulling" || syncState === "pushing"}
-                  className="py-1.5! text-xs!"
-                >
-                  ⬆ Invia
-                </BtnPrimary>
-              </div>
-            </div>
-
-            <label className="flex items-center gap-2 cursor-pointer mt-2 w-max">
-              <input
-                type="checkbox"
-                className="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-400/30"
-                checked={syncCfg.autoPush !== false}
-                onChange={(e) =>
-                  saveSyncCfg({ ...syncCfg, autoPush: e.target.checked })
-                }
-              />
-              <span className="text-xs text-slate-400">
-                Invia automaticamente le modifiche al database (Auto-Push)
-              </span>
-            </label>
-          </div>
-        )}
-      </Card>
-
+      <PreferenzeSettings data={data} update={update} notify={notify} />
+      <SyncSettings data={data} syncCfg={syncCfg} saveSyncCfg={saveSyncCfg} syncState={syncState} pushNow={pushNow} pullNow={pullNow} pendingPush={pendingPush} />
       <DriveSettings data={data} update={update} notify={notify} />
       <QuotesSettings data={data} update={update} notify={notify} />
 
@@ -336,6 +176,276 @@ export function Impostazioni({
         </BtnGhost>
       </Card>
     </div>
+  );
+}
+
+export function PreferenzeSettings({ data, update, notify }) {
+  const currentTheme = data?.settings?.theme || "dark";
+  const currentCurrency = data?.settings?.currency || "EUR";
+
+  return (
+    <Card className="p-5 mb-4" hover={false} delay={45}>
+      <h2 className="font-display text-white mb-1">Preferenze</h2>
+      <p className="text-xs text-slate-500 mb-4">
+        Personalizza l'aspetto visivo e la valuta di visualizzazione dell'applicazione.
+      </p>
+
+      <div className="space-y-4 pt-1">
+        {/* --- SELETTORE TEMA --- */}
+        <div className="flex flex-wrap items-center justify-between gap-3 py-2 border-b border-white/5">
+          <div>
+            <span className="text-sm font-medium text-white block">
+              Tema dell'interfaccia
+            </span>
+            <span className="text-xs text-slate-400">
+              Scegli tra la modalità scura (consigliata) o chiara.
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 p-1 bg-white/5 border border-white/10 rounded-xl">
+            <button
+              type="button"
+              onClick={() => {
+                update((d) => {
+                  if (!d.settings) d.settings = {};
+                  d.settings.theme = "dark";
+                  return d;
+                });
+                notify("Tema Scuro attivato");
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                currentTheme === "dark"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <span>🌙</span> Scuro
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                update((d) => {
+                  if (!d.settings) d.settings = {};
+                  d.settings.theme = "light";
+                  return d;
+                });
+                notify("Tema Chiaro attivato");
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                currentTheme === "light"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <span>☀️</span> Chiaro
+            </button>
+          </div>
+        </div>
+
+        {/* --- SELETTORE VALUTA --- */}
+        <div className="flex flex-wrap items-center justify-between gap-3 py-2">
+          <div>
+            <span className="text-sm font-medium text-white block">
+              Valuta di visualizzazione
+            </span>
+            <span className="text-xs text-slate-400">
+              I dati restano salvati in Euro. Scegli la valuta di conversione a schermo.
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white/5 border border-white/10 rounded-xl">
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                onClick={() => {
+                  update((d) => {
+                    if (!d.settings) d.settings = {};
+                    d.settings.currency = c.code;
+                    return d;
+                  });
+                  notify(`Valuta impostata su ${c.name} (${c.symbol})`);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  currentCurrency === c.code
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {c.code} ({c.symbol})
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function SyncSettings({ data, syncCfg, saveSyncCfg, syncState, pushNow, pullNow, pendingPush }) {
+  return (
+    <Card className="p-5 mb-4" hover={false} delay={30}>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="font-display text-white">Sincronizzazione Cloud</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Salva i dati su Google Sheets o Supabase.
+          </p>
+        </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            className="sr-only peer"
+            checked={syncCfg.enabled}
+            onChange={(e) =>
+              saveSyncCfg({ ...syncCfg, enabled: e.target.checked })
+            }
+          />
+          <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-400"></div>
+        </label>
+      </div>
+
+      {syncCfg.enabled && (
+        <div
+          className="space-y-3 mt-4 pt-4 border-t border-white/5"
+          style={{ animation: "fadeIn .3s both" }}
+        >
+          <div>
+            <Label>Database Remoto</Label>
+            <Select
+              value={syncCfg.provider || "sheets"}
+              onChange={(e) =>
+                saveSyncCfg({ ...syncCfg, provider: e.target.value })
+              }
+            >
+              <option value="sheets">Google Sheets (Apps Script)</option>
+              <option value="supabase">Supabase (PostgreSQL)</option>
+            </Select>
+          </div>
+
+          {!syncCfg.provider || syncCfg.provider === "sheets" ? (
+            <div
+              className="grid sm:grid-cols-2 gap-3"
+              style={{ animation: "fadeIn .2s both" }}
+            >
+              <div>
+                <Label>URL App Web (Google)</Label>
+                <Input
+                  value={syncCfg.url || ""}
+                  onChange={(e) =>
+                    saveSyncCfg({ ...syncCfg, url: e.target.value })
+                  }
+                  placeholder="https://script.google.com/..."
+                />
+              </div>
+              <div>
+                <Label>Token Sicurezza</Label>
+                <Input
+                  type="password"
+                  value={syncCfg.token || ""}
+                  onChange={(e) =>
+                    saveSyncCfg({ ...syncCfg, token: e.target.value })
+                  }
+                  placeholder="Il tuo token segreto"
+                />
+              </div>
+            </div>
+          ) : (
+            <div
+              className="grid sm:grid-cols-2 gap-3"
+              style={{ animation: "fadeIn .2s both" }}
+            >
+              <div>
+                <Label>Supabase Project URL</Label>
+                <Input
+                  value={syncCfg.supabaseUrl || ""}
+                  onChange={(e) =>
+                    saveSyncCfg({ ...syncCfg, supabaseUrl: e.target.value })
+                  }
+                  placeholder="https://xyz.supabase.co"
+                />
+              </div>
+              <div>
+                <Label>Anon Public Key</Label>
+                <Input
+                  type="password"
+                  value={syncCfg.supabaseKey || ""}
+                  onChange={(e) =>
+                    saveSyncCfg({ ...syncCfg, supabaseKey: e.target.value })
+                  }
+                  placeholder="eyJh..."
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 mt-4 p-3 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-2 text-sm text-slate-300">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  syncState === "error"
+                    ? "bg-rose-400"
+                    : pendingPush
+                    ? "bg-amber-400"
+                    : syncState === "ok"
+                    ? "bg-emerald-400"
+                    : "bg-slate-500"
+                }`}
+              ></span>
+              {syncState === "pulling"
+                ? "Lettura..."
+                : syncState === "pushing"
+                ? "Scrittura..."
+                : syncState === "error"
+                ? "Errore di sync"
+                : pendingPush
+                ? "In attesa..."
+                : syncCfg.lastSync
+                ? `Sincronizzato (${new Date(
+                    syncCfg.lastSync
+                  ).toLocaleDateString("it-IT")} ${new Date(
+                    syncCfg.lastSync
+                  ).toLocaleTimeString("it-IT", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })})`
+                : "Mai sincronizzato"}
+            </div>
+            <div className="flex gap-2">
+              <BtnGhost
+                onClick={pullNow}
+                disabled={syncState === "pulling" || syncState === "pushing"}
+                className="py-1.5! text-xs!"
+              >
+                ⬇ Ricevi
+              </BtnGhost>
+              <BtnPrimary
+                onClick={() => pushNow(data, false)}
+                disabled={syncState === "pulling" || syncState === "pushing"}
+                className="py-1.5! text-xs!"
+              >
+                ⬆ Invia
+              </BtnPrimary>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer mt-2 w-max">
+            <input
+              type="checkbox"
+              className="rounded border-white/10 bg-white/5 text-indigo-400 focus:ring-indigo-400/30"
+              checked={syncCfg.autoPush !== false}
+              onChange={(e) =>
+                saveSyncCfg({ ...syncCfg, autoPush: e.target.checked })
+              }
+            />
+            <span className="text-xs text-slate-400">
+              Invia automaticamente le modifiche al database (Auto-Push)
+            </span>
+          </label>
+        </div>
+      )}
+    </Card>
   );
 }
 

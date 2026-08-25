@@ -14,7 +14,9 @@ import {
   endOfMonthIso,
   getTxGroup,
   uid,
-  getCategoryGroups
+  getCategoryGroups,
+  applyTheme,
+  setGlobalCurrency,
 } from "./utils/helpers";
 
 import {
@@ -26,6 +28,7 @@ import {
   SYNC_CFG_KEY,
   DATA_VERSION,
   freshData,
+  DEFAULT_EXCHANGE_RATES,
 } from "./config/constants";
 
 // --- SERVIZI ---
@@ -56,6 +59,7 @@ import { Impostazioni } from "./pages/Impostazioni";
 import { storage } from "./services/storage";
 import { Spinner } from "./components/Spinner";
 import { StyleTag } from "./components/Typography";
+import { marketData } from "./services/markets";
 
 /* ============================================================
    APP PRINCIPALE
@@ -83,6 +87,13 @@ export default function App() {
   const pushTimer = useRef(null);
   const skipSave = useRef(true);
   const skipPush = useRef(true);
+
+  const nowMk = monthKey(new Date());
+  const [selMonth, setSelMonth] = useState(nowMk);
+  const isCurrentMonth = selMonth === nowMk;
+
+  const [ rates, setRates] = useState(DEFAULT_EXCHANGE_RATES);
+  const fetchedRatesRef = useRef(false);
 
   const notify = useCallback((msg) => {
     setToast(msg);
@@ -131,9 +142,40 @@ export default function App() {
     if (!d.quotes) d.quotes = {};
     return d;
   }, []);
-  const nowMk = monthKey(new Date());
-  const [selMonth, setSelMonth] = useState(nowMk);
-  const isCurrentMonth = selMonth === nowMk;
+  /* ---------- Gestione Tema Chiaro / Scuro ---------- */
+  useEffect(() => {
+    if (data?.settings?.theme) {
+      applyTheme(data.settings.theme);
+    } else {
+      applyTheme('dark');
+    }
+  }, [data?.settings?.theme]);
+
+  /* ---------- Gestione Cambio Valuta ---------- */
+  useEffect(() => {
+  if (fetchedRatesRef.current) return;
+  fetchedRatesRef.current = true;
+
+  marketData.getExchangeRates().then((liveRates) => {
+    if (liveRates && Object.keys(liveRates).length > 0) {
+      setRates(liveRates);
+
+      setData((prevData) => {
+        if (!prevData) return prevData;
+        return {
+          ...prevData,
+          _ratesUpdated: Date.now(),
+        };
+      });
+    }
+  });
+}, []);
+
+useEffect(() => {
+  const selectedCurrency = data?.settings?.currency || "EUR";
+  setGlobalCurrency(selectedCurrency, rates);
+}, [data?.settings?.currency, rates]);
+  
   /* ---------- Caricamento: locale subito, poi pull dal foglio ---------- */
   useEffect(() => {
     (async () => {
@@ -1039,7 +1081,7 @@ export default function App() {
 
       <div className="relative flex h-screen overflow-hidden">
         {/* Sidebar Desktop */}
-        <aside className="hidden md:flex flex-col w-56 shrink-0 p-5 gap-1 border-r border-white/5 h-screen overflow-hidden">
+        <aside className="hidden md:flex flex-col w-56 shrink-0 p-5 gap-1 border-r border-white/5 h-screen overflow-hidden transition-colors">
           <div
             className="flex items-center gap-2.5 mb-4 px-1"
             style={{ animation: "fadeUp .5s both" }}
@@ -1070,8 +1112,8 @@ export default function App() {
               onDragEnd={() => setDraggedNavId(null)}
               className={`relative flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
                 page === n.id
-                  ? "bg-white/8 text-white"
-                  : "text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-0.5"
+                  ? "bg-white/8 text-white font-medium active-nav-btn"
+                : "text-slate-400 hover:text-white hover:bg-white/5 hover:translate-x-0.5"
               } ${reorderMode ? "cursor-grab" : "cursor-pointer"}`}
               style={{
                 animation: `fadeUp .5s both`,
@@ -1501,7 +1543,7 @@ export default function App() {
 
       {/* Nav Bassa Mobile */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 glass-strong border-t border-white/10 flex justify-around"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 glass-strong border-t border-white/10 flex justify-around transition-colors"
         style={{
           paddingTop: 6,
           paddingBottom: "max(6px, env(safe-area-inset-bottom))",
@@ -1518,7 +1560,7 @@ export default function App() {
               key={n.id}
               onClick={() => setPage(n.id)}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] rounded-lg transition-all ${
-                page === n.id ? "text-indigo-300" : "text-slate-500"
+                page === n.id ? "text-indigo-600 font-semibold active-nav-btn" : "text-slate-500"
               }`}
             >
               <span className="text-base">{n.icon}</span>

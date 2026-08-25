@@ -262,3 +262,110 @@ tbody tr { transition: background .18s ease; }
     border-right-color: var(--border);
   }
 }
+
+/* --- TEMA SCURO (DEFAULT) --- */
+:root, html.dark-theme {
+  --bg-main: #0A0C12;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(15, 23, 42, 0.75);
+}
+
+/* --- TEMA CHIARO --- */
+html.light-theme {
+  --bg-main: #F8FAFC;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-border: rgba(226, 232, 240, 0.8);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+}
+
+html.light-theme body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+}
+
+html.light-theme .main-pad {
+  background-color: var(--bg-main);
+}
+
+/* Adattamento componenti trasparenti in Light mode */
+html.light-theme .glass-strong {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  color: #0F172A !important;
+}
+
+html.light-theme aside {
+  border-right-color: rgba(226, 232, 240, 0.9) !important;
+}
+
+html.light-theme .text-slate-400 {
+  color: #64748B !important;
+}
+
+html.light-theme .text-white {
+  color: #0F172A !important;
+}
+
+/* ============================================================
+   ADATTAMENTO NAVBAR E SIDEBAR IN TEMA CHIARO
+   ============================================================ */
+
+/* Sfondo e bordo Sidebar Desktop & Drawer Mobile */
+html.light-theme aside {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Bottom Nav Mobile */
+html.light-theme nav.fixed {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #E2E8F0 !important;
+}
+
+/* Testo dei titoli e loghi nelle navbar */
+html.light-theme aside .font-display,
+html.light-theme .md\:hidden .font-display {
+  color: #0F172A !important;
+}
+
+/* Pulsanti della navigazione (Stato Normale) */
+html.light-theme aside button,
+html.light-theme nav button {
+  color: #475569;
+}
+
+/* Pulsanti della navigazione (Hover) */
+html.light-theme aside button:hover:not(.active-nav-btn) {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+/* Pulsante Navigazione Attivo */
+html.light-theme .active-nav-btn {
+  background-color: #EEF2FF !important;
+  color: #4F46E5 !important;
+}
+
+/* Campo "Cerca ovunque" (Cmd+K) e box di stato */
+html.light-theme aside .bg-white\/5,
+html.light-theme aside .bg-white\/8,
+html.light-theme aside .bg-white\/10 {
+  background-color: #F8FAFC !important;
+  border-color: #E2E8F0 !important;
+  color: #334155 !important;
+}
+
+html.light-theme aside kbd {
+  background-color: #E2E8F0 !important;
+  color: #475569 !important;
+}
+
+/* Icona menu mobile e cerca */
+html.light-theme .md\:hidden button {
+  color: #334155 !important;
+}
