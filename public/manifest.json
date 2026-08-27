@@ -1,0 +1,20 @@
+{
+  "short_name": "C.A.R.O.L",
+  "name": "C.A.R.O.L · Overarching Life-system",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0A0C12",
+  "theme_color": "#0A0C12",
+  "display": "standalone"
+}
