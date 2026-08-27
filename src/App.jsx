@@ -60,6 +60,7 @@ import { storage } from "./services/storage";
 import { Spinner } from "./components/Spinner";
 import { StyleTag } from "./components/Typography";
 import { marketData } from "./services/markets";
+import { BriefcaseBusiness, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards } from "lucide-react";
 
 /* ============================================================
    APP PRINCIPALE
@@ -972,18 +973,18 @@ useEffect(() => {
   }, []);
 
   const NAV = useMemo(() => [
-    { id: "dashboard", label: "Dashboard", icon: "◈" },
-    { id: "movimenti", label: "Movimenti", icon: "⇄" },
-    { id: "budget", label: "Budget", icon: "◔" },
-    { id: "categorie", label: "Categorie", icon: "❖" },
-    { id: "conti", label: "Conti", icon: "▣" },
-    { id: "viaggi", label: "Viaggi", icon: "✦" },
-    { id: "investimenti", label: "Investimenti", icon: "▲" },
-    { id: "carriera", label: "Stipendio", icon: "◱" },
-    { id: "report", label: "Report", icon: "∿" },
-    { id: "obiettivi", label: "Obiettivi", icon: "◎" },
-    { id: "archivio", label: "Archivio", icon: "🗂" },
-    { id: "impostazioni", label: "Impostazioni", icon: "⚙" },
+    { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4"/> },
+    { id: "movimenti", label: "Movimenti", icon: <HandCoins className="w-4 h-4"/> },
+    { id: "budget", label: "Budget", icon: <Target className="w-4 h-4"/> },
+    { id: "categorie", label: "Categorie", icon: <Tags className="w-4 h-4"/> },
+    { id: "conti", label: "Conti", icon: <WalletCards className="w-4 h-4"/> },
+    { id: "viaggi", label: "Viaggi", icon: <Plane className="w-4 h-4"/> },
+    { id: "investimenti", label: "Investimenti", icon: <ChartNoAxesCombined className="w-4 h-4"/> },
+    { id: "carriera", label: "Stipendio", icon: <BriefcaseBusiness className="w-4 h-4"/> },
+    { id: "report", label: "Report", icon: <ChartColumnBig className="w-4 h-4"/> },
+    { id: "obiettivi", label: "Obiettivi", icon: <Trophy className="w-4 h-4"/> },
+    { id: "archivio", label: "Archivio", icon: <HandCoins className="w-4 h-4"/> },
+    { id: "impostazioni", label: "Impostazioni", icon: <Settings className="w-4 h-4"/> },
   ], []);
 
   const orderedNav = useMemo(() => {
@@ -1542,66 +1543,83 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Nav Bassa Mobile */}
-      <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 glass-strong border-t border-white/10 flex justify-around px-3 transition-colors"
+      {/* Contenitore Inferiore Mobile (Stile Card + High Blur) */}
+      <div
+        className="md:hidden fixed left-0 right-0 w-full px-6 z-40 flex gap-2.5 items-stretch transition-all"
         style={{
-          paddingTop: 6,
-          paddingBottom: "max(6px, env(safe-area-inset-bottom))",
+          bottom: "max(1rem, env(safe-area-inset-bottom))",
         }}
       >
-        {orderedNav
-          .filter((n) =>
-            ["dashboard", "movimenti", "investimenti", "carriera", "viaggi"].includes(
-              n.id
-            )
-          )
-          .map((n) => (
-            <button
-              key={n.id}
-              onClick={() => setPage(n.id)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] rounded-lg transition-all ${
-                page === n.id ? "text-indigo-600 font-semibold active-nav-btn" : "text-slate-500"
-              }`}
-            >
-              <span className="text-base">{n.icon}</span>
-              {n.label}
-            </button>
-          ))}
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] rounded-lg text-slate-500"
-        >
-          <span className="text-base">☰</span>Menu
-        </button>
-      </nav>
+        {/* Nav Bassa Mobile (80% larghezza) */}
+        <nav className="flex-1 h-14 bg-white/3 border border-white/10 backdrop-blur-xl rounded-full flex justify-around items-center px-2">
+          {orderedNav.slice(0,4)
+            .map((n) => (
+              <button
+                key={n.id}
+                onClick={() => setPage(n.id)}
+                aria-label={n.label}
+                className={`flex-1 h-10 rounded-full grid place-items-center transition-all ${
+                  page === n.id
+                    ? "bg-white/10 text-teal-300 border border-white/15 shadow-sm scale-105"
+                    : "text-slate-400 hover:text-white hover:bg-white/5 active:scale-90"
+                }`}
+              >
+                <span className="w-5 h-5 flex items-center justify-center">
+                  {n.icon}
+                </span>
+              </button>
+            ))}
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label="Menu"
+            className="flex-1 h-10 rounded-full grid place-items-center text-slate-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all"
+          >
+            <span className="w-5 h-5 flex items-center justify-center">☰</span>
+          </button>
+        </nav>
 
-      {/* FAB Viaggio Rapido */}
-      {currentTrip && (
-        <button
-          onClick={() => setQuickTripExpense({ trip: currentTrip })}
-          className="fab-bottom fixed right-22 md:right-26 z-40 w-14 h-14 rounded-2xl bg-linear-to-br from-teal-400 to-emerald-500 text-slate-950 text-2xl shadow-xl shadow-teal-500/40 hover:scale-105 hover:shadow-teal-500/60 active:scale-95 transition-all flex items-center justify-center"
-          style={{
-            bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)",
-            animation: "popIn .4s cubic-bezier(.22,1,.36,1) both",
-          }}
-          title={`Aggiungi spesa a ${currentTrip.nome}`}
-        >
-          ✈️
-        </button>
-      )}
+        {/* FAB Dinamico (Stile Card + High Blur) */}
+        {currentTrip ? (
+          /* FAB Viaggio Rapido */
+          <button
+            onClick={() => setQuickTripExpense({ trip: currentTrip })}
+            className="w-14 h-14 rounded-full bg-teal-500/15 border border-teal-400/30 backdrop-blur-xl text-teal-300 shadow-xl shadow-teal-500/10 hover:bg-teal-500/25 active:scale-95 transition-all grid place-items-center shrink-0 px-2"
+            title={`Aggiungi spesa a ${currentTrip.nome}`}
+          >
+            <Plane className="w-5 h-5 stroke-[2.2]" />
+          </button>
+        ) : (
+          /* FAB Principale (Standard) */
+          <button
+            onClick={() => setTxModal({})}
+            className="w-14 h-14 rounded-full bg-indigo-500/15 border border-indigo-400/30 backdrop-blur-xl text-indigo-300 shadow-xl shadow-indigo-500/10 hover:bg-indigo-500/25 active:scale-95 transition-all grid place-items-center shrink-0 px-2"
+            title="Nuovo movimento"
+          >
+            <Plus className="w-6 h-6 stroke-[2.5]" />
+          </button>
+        )}
+      </div>
 
-      {/* FAB Principale */}
-      <button
-        onClick={() => setTxModal({})}
-        className="fab-bottom fixed right-5 md:right-8 z-40 w-14 h-14 rounded-2xl bg-linear-to-br from-indigo-400 to-violet-500 text-slate-950 text-2xl font-light shadow-xl shadow-indigo-500/40 hover:scale-105 hover:shadow-indigo-500/60 active:scale-95 transition-all"
-        style={{
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.5rem)",
-        }}
-        title="Nuovo movimento"
-      >
-        +
-      </button>
+      {/* FAB Standalone per Desktop (Visibile solo da md in su) */}
+      <div className="hidden md:block fixed right-8 bottom-8 z-40">
+        {currentTrip ? (
+          <button
+            onClick={() => setQuickTripExpense({ trip: currentTrip })}
+            className="w-14 h-14 rounded-2xl bg-teal-500/15 border border-teal-400/30 backdrop-blur-xl text-teal-300 shadow-xl shadow-teal-500/20 hover:bg-teal-500/25 hover:scale-105 active:scale-95 transition-all grid place-items-center"
+            title={`Aggiungi spesa a ${currentTrip.nome}`}
+          >
+            <Plane className="w-6 h-6 stroke-[2.2]" />
+          </button>
+        ) : (
+          <button
+            onClick={() => setTxModal({})}
+            className="w-14 h-14 rounded-2xl bg-indigo-500/15 border border-indigo-400/30 backdrop-blur-xl text-indigo-300 shadow-xl shadow-indigo-500/20 hover:bg-indigo-500/25 hover:scale-105 active:scale-95 transition-all grid place-items-center"
+            title="Nuovo movimento"
+          >
+            <Plus className="w-7 h-7 stroke-[2.5]" />
+          </button>
+        )}
+      </div>
 
       {/* Toast Notifiche */}
       {toast && (
