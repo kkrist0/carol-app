@@ -1053,179 +1053,496 @@ function TripDetail({ trip, data, update, notify, setConfirmDlg, onClose, onEdit
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-75 overflow-y-auto" style={{ animation: "fadeIn .2s both" }}>
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative max-w-3xl mx-auto sm:my-8 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-white/10 min-h-full sm:min-h-0" style={{ background: "rgba(12,15,23,.98)", animation: "popIn .32s cubic-bezier(.22,1,.36,1) both", paddingBottom: "env(safe-area-inset-bottom)" }}>
-        {/* hero */}
-        <div className="h-40 sm:h-52 md:h-56 relative" style={{ background: `linear-gradient(135deg, ${trip.colore}55, #0F1420)` }}>
-          {trip.cover && <img src={trip.cover} alt="" className="absolute inset-0 w-full h-full object-cover opacity-75" onError={(e) => (e.currentTarget.style.display = "none")} />}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(10,12,18,.4) 0%, transparent 35%, rgba(12,15,23,.97))" }} />
-          <button onClick={onClose} className="absolute top-3 right-3 w-9 h-9 rounded-full grid place-items-center text-white/90 border border-white/15 hover:bg-white/15 transition-all" style={{ background: "rgba(0,0,0,.35)", backdropFilter: "blur(8px)" }}>✕</button>
-          <div className="absolute bottom-4 left-5 right-5">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl">{trip.icona}</span>
-              {status === "corso" && <Chip tone="up">In corso</Chip>}
-              {status === "futuro" && <Chip tone="up">Tra {daysTo(trip.partenza)} giorni</Chip>}
-            </div>
-            <h2 className="font-display text-xl sm:text-2xl md:text-3xl text-white truncate">{trip.nome}</h2>
-            <p className="text-xs sm:text-sm text-slate-300 mt-0.5">{countryFlag(trip.paese)} {trip.citta ? trip.citta + " · " : ""}{countryLabel(trip.paese)} · {fmtDate(trip.partenza)} → {fmtDate(trip.ritorno)}</p>
+  <div className="fixed inset-0 z-80 overflow-y-auto" style={{ animation: "fadeIn .2s both" }}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+    <div
+      className="relative max-w-3xl mx-auto sm:my-8 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-white/10 min-h-full sm:min-h-0"
+      style={{
+        background: "rgba(12,15,23,.98)",
+        animation: "popIn .32s cubic-bezier(.22,1,.36,1) both",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
+      {/* hero - aggiunta safe area top dinamica per il mobile */}
+      <div
+        className="h-48 sm:h-52 md:h-56 relative"
+        style={{
+          background: `linear-gradient(135deg, ${trip.colore}55, #0F1420)`,
+          paddingTop: "env(safe-area-inset-top, 0px)",
+        }}
+      >
+        {trip.cover && (
+          <img
+            src={trip.cover}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover opacity-75"
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
+        )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(10,12,18,.6) 0%, transparent 40%, rgba(12,15,23,.97))",
+          }}
+        />
+
+        {/* Pulsante di chiusura posizionato sotto la safe area */}
+        <button
+          onClick={onClose}
+          className="absolute right-3.5 w-9 h-9 rounded-full grid place-items-center text-white/90 border border-white/15 hover:bg-white/15 transition-all z-10"
+          style={{
+            top: "calc(env(safe-area-inset-top, 0px) + 0.75rem)",
+            background: "rgba(0,0,0,.45)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          ✕
+        </button>
+
+        {/* Titolo e flag distanziati dalla topbar */}
+        <div className="absolute bottom-4 left-5 right-5 z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-2xl">{trip.icona}</span>
+            {status === "corso" && <Chip tone="up">In corso</Chip>}
+            {status === "futuro" && (
+              <Chip tone="up">Tra {daysTo(trip.partenza)} giorni</Chip>
+            )}
           </div>
-        </div>
-
-        <div className="p-4 sm:p-5">
-          {/* budget */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
-            <Card className="p-3.5" hover={false}><p className="text-[11px] text-slate-500">Speso</p><CountEur value={totale} cls={`font-display text-lg tabular-nums ${pct > 100 ? "text-rose-300" : "text-white"}`} /></Card>
-            <Card className="p-3.5" hover={false}><p className="text-[11px] text-slate-500">Budget</p><p className="font-display text-lg text-slate-300 tabular-nums">{trip.budget > 0 ? eur(trip.budget) : "—"}</p></Card>
-            <Card className="p-3.5" hover={false}><p className="text-[11px] text-slate-500">{gg} giorni · media</p><p className="font-display text-lg text-indigo-300 tabular-nums">{eur(gg ? totale / gg : 0)}</p></Card>
-          </div>
-          {trip.budget > 0 && (
-            <div className="mb-4">
-              <div className="h-2 rounded-full bg-white/5 overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.min(100, pct)}%`, background: pct > 100 ? "linear-gradient(90deg,#FB7185,#F43F5E)" : pct > 80 ? "linear-gradient(90deg,#FBBF24,#F59E0B)" : `linear-gradient(90deg,${trip.colore},#A5B4FC)` }} />
-              </div>
-              <p className={`text-[11px] mt-1 ${pct > 100 ? "text-rose-300" : "text-slate-500"}`}>{pct > 100 ? `Budget superato di ${eur(totale - trip.budget)}` : `${Math.round(pct)}% usato · restano ${eur(trip.budget - totale)}`}</p>
-            </div>
-          )}
-
-          {/* tab */}
-          <div className="flex gap-1 bg-white/5 rounded-xl p-1 mb-4 overflow-x-auto">
-            {[{ v: "panoramica", l: "Panoramica" }, { v: "spese", l: `Spese (${expenses.length})` }, { v: "timeline", l: "Timeline" }, { v: "album", l: `Album (${(trip.foto || []).length})` }].map((t) => (
-              <button key={t.v} onClick={() => setTab(t.v)} className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all ${tab === t.v ? "bg-white/15 text-white" : "text-slate-400 hover:text-white"}`}>{t.l}</button>
-            ))}
-          </div>
-
-          {tab === "panoramica" && (
-            <div className="space-y-4" style={{ animation: "fadeUp .3s both" }}>
-              {trip.descrizione && <p className="text-sm text-slate-300 leading-relaxed">{trip.descrizione}</p>}
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Card className="p-4" hover={false}>
-                  <p className="text-xs text-slate-400 mb-2">Spese per categoria</p>
-                  {byCat.length ? (
-                    <div className="flex items-center gap-3">
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart><Pie data={byCat} dataKey="value" innerRadius="52%" outerRadius="88%" paddingAngle={3} animationDuration={900}>{byCat.map((e, i) => <Cell key={i} fill={e.fill} stroke="transparent" />)}</Pie><Tooltip content={<ChartTip />} /></PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="flex-1 space-y-1 text-xs max-h-24 overflow-y-auto min-w-0">
-                        {byCat.slice(0, 6).map((c) => (
-                          <div key={c.name} className="flex justify-between gap-2"><span className="text-slate-300 truncate">{c.icona} {c.name}</span><span className="text-slate-400 tabular-nums">{eur(c.value)}</span></div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : <EmptyState text="Nessuna spesa registrata." />}
-                </Card>
-                <Card className="p-4" hover={false}>
-                  <p className="text-xs text-slate-400 mb-2">Dove</p>
-                  <MiniMap lat={trip.lat} lon={trip.lon} paese={trip.paese} colore={trip.colore} height={170} />
-                  <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                    <div><p className="text-slate-500">Persone</p><p className="text-white">{trip.persone || 1}</p></div>
-                    <div><p className="text-slate-500">Distanza (a/r)</p><p className="text-white">{trip.lat || trip.lon ? `${(haversine(HOME_BASE, [trip.lat, trip.lon]) * 2).toLocaleString("it-IT")} km` : "—"}</p></div>
-                  </div>
-                </Card>
-              </div>
-              {trip.note && <Card className="p-4" hover={false}><p className="text-xs text-slate-400 mb-1">Note</p><p className="text-sm text-slate-300 whitespace-pre-wrap">{trip.note}</p></Card>}
-              <label className="flex items-center gap-3 p-3.5 rounded-xl bg-white/4 border border-white/6 cursor-pointer" onClick={toggleSync}>
-                <span className={`w-10 h-5.5 rounded-full transition-all relative shrink-0 ${trip.syncFinanza ? "bg-linear-to-r from-indigo-400 to-violet-400" : "bg-white/10"}`} style={{ height: 22 }}>
-                  <span className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all ${trip.syncFinanza ? "left-5.5" : "left-0.5"}`} />
-                </span>
-                <span className="text-sm text-slate-300">Registra le spese anche nel bilancio principale</span>
-              </label>
-            </div>
-          )}
-
-          {tab === "spese" && (
-            <div style={{ animation: "fadeUp .3s both" }}>
-              <div className="flex justify-between items-center mb-3">
-                <p className="text-xs text-slate-500">{expenses.length} spese · {eur(totale)}</p>
-                <BtnPrimary onClick={() => setExpModal({})} className="py-1.5! text-xs!">+ Spesa</BtnPrimary>
-              </div>
-              <div className="divide-y divide-white/5">
-                {expenses.map((e, i) => {
-                  const c = tripCat(e.categoria);
-                  return (
-                    <div key={e.id} className="group flex items-center gap-3 py-2.5" style={{ animation: "fadeUp .35s both", animationDelay: `${Math.min(i, 10) * 30}ms` }}>
-                      <span className="w-9 h-9 rounded-xl grid place-items-center text-base shrink-0" style={{ background: c.colore + "1f", border: `1px solid ${c.colore}33` }}>{c.icona}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-white truncate">{e.descrizione || c.nome}</p>
-                        <p className="text-xs text-slate-500 truncate">{c.nome} · {fmtDate(e.data)}{e.metodo ? ` · ${e.metodo}` : ""}</p>
-                      </div>
-                      <span className="text-sm text-slate-200 tabular-nums">{eur(e.importo)}</span>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => setExpModal(e)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-xs transition-all">✎</button>
-                        <button onClick={() => delExp(e.id)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-rose-500/20 text-xs hover:text-rose-300 transition-all">🗑</button>
-                      </div>
-                    </div>
-                  );
-                })}
-                {expenses.length === 0 && <EmptyState text="Nessuna spesa. Aggiungi voli, hotel, ristoranti…" />}
-              </div>
-            </div>
-          )}
-
-          {tab === "timeline" && (
-            <div className="space-y-3" style={{ animation: "fadeUp .3s both" }}>
-              {timeline.map((d, i) => (
-                <div key={d.iso} className="flex gap-3" style={{ animation: "fadeUp .35s both", animationDelay: `${Math.min(i, 12) * 40}ms` }}>
-                  <div className="flex flex-col items-center shrink-0">
-                    <span className="w-8 h-8 rounded-full grid place-items-center text-[11px] font-semibold" style={{ background: trip.colore + "22", border: `1px solid ${trip.colore}55`, color: trip.colore }}>{d.n}</span>
-                    {i < timeline.length - 1 && <span className="w-px flex-1 bg-white/10 my-1" />}
-                  </div>
-                  <div className="flex-1 pb-2 min-w-0">
-                    <div className="flex justify-between items-baseline gap-2">
-                      <p className="text-sm text-white capitalize">{d.label}</p>
-                      {d.tot > 0 && <span className="text-xs text-slate-400 tabular-nums">{eur(d.tot)}</span>}
-                    </div>
-                    {d.spese.length ? (
-                      <div className="mt-1.5 flex flex-wrap gap-1.5">
-                        {d.spese.map((e) => { const c = tripCat(e.categoria); return (
-                          <span key={e.id} className="text-[11px] px-2 py-1 rounded-lg border" style={{ background: c.colore + "14", borderColor: c.colore + "33", color: "#e2e8f0" }}>{c.icona} {e.descrizione || c.nome} · {eur(e.importo)}</span>
-                        ); })}
-                      </div>
-                    ) : <p className="text-[11px] text-slate-600 mt-0.5">Nessuna spesa registrata</p>}
-                  </div>
-                </div>
-              ))}
-              {!timeline.length && <EmptyState text="Imposta le date del viaggio per vedere la timeline." />}
-            </div>
-          )}
-
-          {tab === "album" && (
-            <div style={{ animation: "fadeUp .3s both" }}>
-              {(trip.foto || []).length ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {trip.foto.map((f, i) => (
-                    <button key={i} onClick={() => setLightbox(i)} className="aspect-square rounded-xl overflow-hidden border border-white/10 group">
-                      <img src={f} alt="" loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onError={(e) => (e.currentTarget.parentElement.style.display = "none")} />
-                    </button>
-                  ))}
-                </div>
-              ) : <EmptyState text="Album vuoto. Aggiungi i link delle foto modificando il viaggio." />}
-            </div>
-          )}
-
-          <div className="modal-actions flex flex-wrap items-center gap-2 mt-5 pt-4 border-t border-white/6">
-            <BtnGhost onClick={onEdit}>Modifica</BtnGhost>
-            <button onClick={onDelete} className="text-xs text-rose-300/70 hover:text-rose-300 px-2 transition-colors">Elimina</button>
-            <div className="flex-1" />
-            <BtnPrimary onClick={() => { setTab("spese"); setExpModal({}); }}>+ Spesa</BtnPrimary>
-          </div>
+          <h2 className="font-display text-xl sm:text-2xl md:text-3xl text-white truncate">
+            {trip.nome}
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+            {countryFlag(trip.paese)} {trip.citta ? trip.citta + " · " : ""}
+            {countryLabel(trip.paese)} · {fmtDate(trip.partenza)} →{" "}
+            {fmtDate(trip.ritorno)}
+          </p>
         </div>
       </div>
 
-      <TripExpenseModal open={!!expModal} exp={expModal} trip={trip} accounts={data.accounts} onClose={() => setExpModal(null)} onSave={saveExp} />
-      {lightbox != null && (
-        <div className="fixed inset-0 z-115 bg-black/95 flex items-center justify-center" style={{ animation: "fadeIn .2s both" }} onClick={() => setLightbox(null)}>
-          <img src={trip.foto[lightbox]} alt="" className="max-w-[92vw] max-h-[86vh] object-contain rounded-xl" style={{ animation: "popIn .3s cubic-bezier(.22,1,.36,1) both" }} />
-          <button onClick={(e) => { e.stopPropagation(); setLightbox((l) => (l - 1 + trip.foto.length) % trip.foto.length); }} className="absolute left-4 w-11 h-11 rounded-full bg-white/10 text-white text-xl hover:bg-white/20 transition-all">‹</button>
-          <button onClick={(e) => { e.stopPropagation(); setLightbox((l) => (l + 1) % trip.foto.length); }} className="absolute right-4 w-11 h-11 rounded-full bg-white/10 text-white text-xl hover:bg-white/20 transition-all">›</button>
-          <span className="absolute bottom-6 text-xs text-slate-400">{lightbox + 1} / {trip.foto.length}</span>
+      <div className="p-4 sm:p-5">
+        {/* budget */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+          <Card className="p-3.5" hover={false}>
+            <p className="text-[11px] text-slate-500">Speso</p>
+            <CountEur
+              value={totale}
+              cls={`font-display text-lg tabular-nums ${
+                pct > 100 ? "text-rose-300" : "text-white"
+              }`}
+            />
+          </Card>
+          <Card className="p-3.5" hover={false}>
+            <p className="text-[11px] text-slate-500">Budget</p>
+            <p className="font-display text-lg text-slate-300 tabular-nums">
+              {trip.budget > 0 ? eur(trip.budget) : "—"}
+            </p>
+          </Card>
+          <Card className="p-3.5" hover={false}>
+            <p className="text-[11px] text-slate-500">{gg} giorni · media</p>
+            <p className="font-display text-lg text-indigo-300 tabular-nums">
+              {eur(gg ? totale / gg : 0)}
+            </p>
+          </Card>
         </div>
-      )}
-    </div>,
-    document.body
-  );
+        {trip.budget > 0 && (
+          <div className="mb-4">
+            <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-1000 ease-out"
+                style={{
+                  width: `${Math.min(100, pct)}%`,
+                  background:
+                    pct > 100
+                      ? "linear-gradient(90deg,#FB7185,#F43F5E)"
+                      : pct > 80
+                      ? "linear-gradient(90deg,#FBBF24,#F59E0B)"
+                      : `linear-gradient(90deg,${trip.colore},#A5B4FC)`,
+                }}
+              />
+            </div>
+            <p
+              className={`text-[11px] mt-1 ${
+                pct > 100 ? "text-rose-300" : "text-slate-500"
+              }`}
+            >
+              {pct > 100
+                ? `Budget superato di ${eur(totale - trip.budget)}`
+                : `${Math.round(pct)}% usato · restano ${eur(
+                    trip.budget - totale
+                  )}`}
+            </p>
+          </div>
+        )}
+
+        {/* tab */}
+        <div className="flex gap-1 bg-white/5 rounded-xl p-1 mb-4 overflow-x-auto">
+          {[
+            { v: "panoramica", l: "Panoramica" },
+            { v: "spese", l: `Spese (${expenses.length})` },
+            { v: "timeline", l: "Timeline" },
+            { v: "album", l: `Album (${(trip.foto || []).length})` },
+          ].map((t) => (
+            <button
+              key={t.v}
+              onClick={() => setTab(t.v)}
+              className={`px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all ${
+                tab === t.v
+                  ? "bg-white/15 text-white"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              {t.l}
+            </button>
+          ))}
+        </div>
+
+        {tab === "panoramica" && (
+          <div className="space-y-4" style={{ animation: "fadeUp .3s both" }}>
+            {trip.descrizione && (
+              <p className="text-sm text-slate-300 leading-relaxed">
+                {trip.descrizione}
+              </p>
+            )}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Card className="p-4" hover={false}>
+                <p className="text-xs text-slate-400 mb-2">Spese per categoria</p>
+                {byCat.length ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={byCat}
+                            dataKey="value"
+                            innerRadius="52%"
+                            outerRadius="88%"
+                            paddingAngle={3}
+                            animationDuration={900}
+                          >
+                            {byCat.map((e, i) => (
+                              <Cell key={i} fill={e.fill} stroke="transparent" />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<ChartTip />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="flex-1 space-y-1 text-xs max-h-24 overflow-y-auto min-w-0">
+                      {byCat.slice(0, 6).map((c) => (
+                        <div
+                          key={c.name}
+                          className="flex justify-between gap-2"
+                        >
+                          <span className="text-slate-300 truncate">
+                            {c.icona} {c.name}
+                          </span>
+                          <span className="text-slate-400 tabular-nums">
+                            {eur(c.value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <EmptyState text="Nessuna spesa registrata." />
+                )}
+              </Card>
+              <Card className="p-4" hover={false}>
+                <p className="text-xs text-slate-400 mb-2">Dove</p>
+                <MiniMap
+                  lat={trip.lat}
+                  lon={trip.lon}
+                  paese={trip.paese}
+                  colore={trip.colore}
+                  height={170}
+                />
+                <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+                  <div>
+                    <p className="text-slate-500">Persone</p>
+                    <p className="text-white">{trip.persone || 1}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Distanza (a/r)</p>
+                    <p className="text-white">
+                      {trip.lat || trip.lon
+                        ? `${(
+                            haversine(HOME_BASE, [trip.lat, trip.lon]) * 2
+                          ).toLocaleString("it-IT")} km`
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            {trip.note && (
+              <Card className="p-4" hover={false}>
+                <p className="text-xs text-slate-400 mb-1">Note</p>
+                <p className="text-sm text-slate-300 whitespace-pre-wrap">
+                  {trip.note}
+                </p>
+              </Card>
+            )}
+            <label
+              className="flex items-center gap-3 p-3.5 rounded-xl bg-white/4 border border-white/6 cursor-pointer"
+              onClick={toggleSync}
+            >
+              <span
+                className={`w-10 h-5.5 rounded-full transition-all relative shrink-0 ${
+                  trip.syncFinanza
+                    ? "bg-linear-to-r from-indigo-400 to-violet-400"
+                    : "bg-white/10"
+                }`}
+                style={{ height: 22 }}
+              >
+                <span
+                  className={`absolute top-0.5 w-4.5 h-4.5 rounded-full bg-white transition-all ${
+                    trip.syncFinanza ? "left-5.5" : "left-0.5"
+                  }`}
+                />
+              </span>
+              <span className="text-sm text-slate-300">
+                Registra le spese anche nel bilancio principale
+              </span>
+            </label>
+          </div>
+        )}
+
+        {tab === "spese" && (
+          <div style={{ animation: "fadeUp .3s both" }}>
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-xs text-slate-500">
+                {expenses.length} spese · {eur(totale)}
+              </p>
+              <BtnPrimary
+                onClick={() => setExpModal({})}
+                className="py-1.5! text-xs!"
+              >
+                + Spesa
+              </BtnPrimary>
+            </div>
+            <div className="divide-y divide-white/5">
+              {expenses.map((e, i) => {
+                const c = tripCat(e.categoria);
+                return (
+                  <div
+                    key={e.id}
+                    className="group flex items-center gap-3 py-2.5"
+                    style={{
+                      animation: "fadeUp .35s both",
+                      animationDelay: `${Math.min(i, 10) * 30}ms`,
+                    }}
+                  >
+                    <span
+                      className="w-9 h-9 rounded-xl grid place-items-center text-base shrink-0"
+                      style={{
+                        background: c.colore + "1f",
+                        border: `1px solid ${c.colore}33`,
+                      }}
+                    >
+                      {c.icona}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-white truncate">
+                        {e.descrizione || c.nome}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate">
+                        {c.nome} · {fmtDate(e.data)}
+                        {e.metodo ? ` · ${e.metodo}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-sm text-slate-200 tabular-nums">
+                      {eur(e.importo)}
+                    </span>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => setExpModal(e)}
+                        className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-xs transition-all"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        onClick={() => delExp(e.id)}
+                        className="w-7 h-7 rounded-lg bg-white/5 hover:bg-rose-500/20 text-xs hover:text-rose-300 transition-all"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {expenses.length === 0 && (
+                <EmptyState text="Nessuna spesa. Aggiungi voli, hotel, ristoranti…" />
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === "timeline" && (
+          <div className="space-y-3" style={{ animation: "fadeUp .3s both" }}>
+            {timeline.map((d, i) => (
+              <div
+                key={d.iso}
+                className="flex gap-3"
+                style={{
+                  animation: "fadeUp .35s both",
+                  animationDelay: `${Math.min(i, 12) * 40}ms`,
+                }}
+              >
+                <div className="flex flex-col items-center shrink-0">
+                  <span
+                    className="w-8 h-8 rounded-full grid place-items-center text-[11px] font-semibold"
+                    style={{
+                      background: trip.colore + "22",
+                      border: `1px solid ${trip.colore}55`,
+                      color: trip.colore,
+                    }}
+                  >
+                    {d.n}
+                  </span>
+                  {i < timeline.length - 1 && (
+                    <span className="w-px flex-1 bg-white/10 my-1" />
+                  )}
+                </div>
+                <div className="flex-1 pb-2 min-w-0">
+                  <div className="flex justify-between items-baseline gap-2">
+                    <p className="text-sm text-white capitalize">{d.label}</p>
+                    {d.tot > 0 && (
+                      <span className="text-xs text-slate-400 tabular-nums">
+                        {eur(d.tot)}
+                      </span>
+                    )}
+                  </div>
+                  {d.spese.length ? (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {d.spese.map((e) => {
+                        const c = tripCat(e.categoria);
+                        return (
+                          <span
+                            key={e.id}
+                            className="text-[11px] px-2 py-1 rounded-lg border"
+                            style={{
+                              background: c.colore + "14",
+                              borderColor: c.colore + "33",
+                              color: "#e2e8f0",
+                            }}
+                          >
+                            {c.icona} {e.descrizione || c.nome} · {eur(e.importo)}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Nessuna spesa registrata
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+            {!timeline.length && (
+              <EmptyState text="Imposta le date del viaggio per vedere la timeline." />
+            )}
+          </div>
+        )}
+
+        {tab === "album" && (
+          <div style={{ animation: "fadeUp .3s both" }}>
+            {(trip.foto || []).length ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {trip.foto.map((f, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setLightbox(i)}
+                    className="aspect-square rounded-xl overflow-hidden border border-white/10 group"
+                  >
+                    <img
+                      src={f}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) =>
+                        (e.currentTarget.parentElement.style.display = "none")
+                      }
+                    />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <EmptyState text="Album vuoto. Aggiungi i link delle foto modificando il viaggio." />
+            )}
+          </div>
+        )}
+
+        <div className="modal-actions flex flex-wrap items-center gap-2 mt-5 pt-4 border-t border-white/6">
+          <BtnGhost onClick={onEdit}>Modifica</BtnGhost>
+          <button
+            onClick={onDelete}
+            className="text-xs text-rose-300/70 hover:text-rose-300 px-2 transition-colors"
+          >
+            Elimina
+          </button>
+          <div className="flex-1" />
+          <BtnPrimary
+            onClick={() => {
+              setTab("spese");
+              setExpModal({});
+            }}
+          >
+            + Spesa
+          </BtnPrimary>
+        </div>
+      </div>
+    </div>
+
+    <TripExpenseModal
+      open={!!expModal}
+      exp={expModal}
+      trip={trip}
+      accounts={data.accounts}
+      onClose={() => setExpModal(null)}
+      onSave={saveExp}
+    />
+    {lightbox != null && (
+      <div
+        className="fixed inset-0 z-115 bg-black/95 flex items-center justify-center"
+        style={{ animation: "fadeIn .2s both" }}
+        onClick={() => setLightbox(null)}
+      >
+        <img
+          src={trip.foto[lightbox]}
+          alt=""
+          className="max-w-[92vw] max-h-[86vh] object-contain rounded-xl"
+          style={{ animation: "popIn .3s cubic-bezier(.22,1,.36,1) both" }}
+        />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightbox(
+              (l) => (l - 1 + trip.foto.length) % trip.foto.length
+            );
+          }}
+          className="absolute left-4 w-11 h-11 rounded-full bg-white/10 text-white text-xl hover:bg-white/20 transition-all"
+        >
+          ‹
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightbox((l) => (l + 1) % trip.foto.length);
+          }}
+          className="absolute right-4 w-11 h-11 rounded-full bg-white/10 text-white text-xl hover:bg-white/20 transition-all"
+        >
+          ›
+        </button>
+        <span className="absolute bottom-6 text-xs text-slate-400">
+          {lightbox + 1} / {trip.foto.length}
+        </span>
+      </div>
+    )}
+  </div>,
+  document.body
+);
 };
 
 export function TripExpenseModal({ open, exp, trip, accounts, onClose, onSave, onDelete }) {

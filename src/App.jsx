@@ -1217,11 +1217,12 @@ useEffect(() => {
             </div>
           </div>
         </aside>
-
+        {/* Notch / Dynamic Island Blur Overlay */}
+        <div className="md:hidden fixed top-0 inset-x-0 h-[env(safe-area-inset-top,20px)] bg-[#0A0C12]/80 backdrop-blur-md z-50 pointer-events-none" />
         {/* Main Content Area */}
         <main
           ref={mainRef}
-          className="main-pad flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden p-4 pt-[max(1rem,env(safe-area-inset-top))] md:p-8"
+          className="main-pad flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden p-4 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] md:p-8 md:pt-8"
         >
           {/* Topbar Mobile */}
           <div className="md:hidden flex items-center justify-between gap-2 mb-5">
@@ -1543,7 +1544,7 @@ useEffect(() => {
 
       {/* Nav Bassa Mobile */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 glass-strong border-t border-white/10 flex justify-around transition-colors"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 glass-strong border-t border-white/10 flex justify-around px-3 transition-colors"
         style={{
           paddingTop: 6,
           paddingBottom: "max(6px, env(safe-area-inset-bottom))",
