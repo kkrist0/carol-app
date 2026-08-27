@@ -6,6 +6,8 @@ import {
   useCallback,
 } from "react";
 
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+
 import {
   eur,
   todayISO,
@@ -1016,6 +1018,17 @@ useEffect(() => {
 
   const mainRef = useRef(null);
 
+  const handleDragEnd = (result) => {
+  if (!result.destination) return;
+  
+  const sourceId = result.draggableId;
+  const targetId = orderedNav[result.destination.index]?.id;
+  
+  if (sourceId && targetId && sourceId !== targetId) {
+    moveNavItem(sourceId, targetId);
+  }
+};
+
   useEffect(() => {
     mainRef.current?.scrollTo({
       top: 0,
@@ -1396,7 +1409,7 @@ useEffect(() => {
         </main>
       </div>
 
-      {/* Drawer Mobile */}
+      {/* Drawer Mobile con Drag and Drop nativo per Touch */}
       {menuOpen && (
         <div className="md:hidden fixed inset-0 z-85">
           <div
@@ -1408,8 +1421,8 @@ useEffect(() => {
             className="absolute inset-y-0 left-0 w-68 max-w-[85vw] glass-strong border-r border-white/10 flex flex-col p-5 overflow-y-auto"
             style={{
               animation: "drawerIn .3s cubic-bezier(.22,1,.36,1) both",
-              paddingTop: "max(1.25rem, env(safe-area-inset-top))",
-              paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
+              paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)",
+              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.25rem)",
             }}
           >
             <div className="flex items-center justify-between mb-6">
@@ -1419,68 +1432,99 @@ useEffect(() => {
                   <span className="font-display text-lg text-white tracking-tight leading-none block">
                     C.A.R.O.L
                   </span>
-                  <span className="text-[9px] uppercase tracking-[0.22em] text-slate-500">
-                    Overarching Life-system
-                  </span>
                 </div>
               </div>
               <button
                 onClick={() => setMenuOpen(false)}
                 aria-label="Chiudi"
-                className="w-9 h-9 rounded-full bg-white/5 text-slate-300 hover:bg-white/10 transition-all"
+                className="w-9 h-9 rounded-full bg-white/5 text-slate-300 hover:bg-white/10 transition-all grid place-items-center"
               >
                 ✕
               </button>
             </div>
-            <nav className="flex flex-col gap-1">
-              {orderedNav.map((n, i) => (
-                <button
-                  key={n.id}
-                  draggable={reorderMode}
-                  onClick={() => {
-                    if (reorderMode) return;
-                    setPage(n.id);
-                    setMenuOpen(false);
-                  }}
-                  onDragStart={() => setDraggedNavId(n.id)}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                  }}
-                  onDrop={() => moveNavItem(draggedNavId, n.id)}
-                  onDragEnd={() => setDraggedNavId(null)}
-                  className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                    page === n.id
-                      ? "bg-white/9 text-white"
-                      : "text-slate-400 active:bg-white/5"
-                  }`}
-                  style={{
-                    animation: "fadeUp .35s both",
-                    animationDelay: `${40 + i * 30}ms`,
-                  }}
-                >
-                  {page === n.id && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-5 rounded-full bg-linear-to-b from-indigo-300 to-teal-300" />
-                  )}
-                  {reorderMode && (
-                    <span className="text-slate-500 text-sm">⋮⋮</span>
-                  )}
-                  <span
-                    className={`text-base ${
-                      page === n.id ? "opacity-100" : "opacity-60"
-                    }`}
+
+            {/* Navigazione con Drag & Drop touch-friendly */}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="mobile-drawer-nav">
+                {(provided) => (
+                  <nav
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="flex flex-col gap-1"
                   >
-                    {n.icon}
-                  </span>
-                  {n.label}
-                </button>
-              ))}
-            </nav>
+                    {orderedNav.map((n, i) => (
+                      <Draggable
+                        key={n.id}
+                        draggableId={n.id}
+                        index={i}
+                        isDragDisabled={!reorderMode}
+                      >
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            onClick={() => {
+                              if (reorderMode) return;
+                              setPage(n.id);
+                              setMenuOpen(false);
+                            }}
+                            className={`relative flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all select-none ${
+                              page === n.id
+                                ? "bg-white/9 text-white"
+                                : "text-slate-400 active:bg-white/5"
+                            } ${
+                              snapshot.isDragging
+                                ? "bg-indigo-500/20 border border-indigo-400/40 shadow-xl"
+                                : ""
+                            }`}
+                            style={{
+                              ...provided.draggableProps.style,
+                              animation: snapshot.isDragging
+                                ? "none"
+                                : "fadeUp .35s both",
+                              animationDelay: `${40 + i * 30}ms`,
+                            }}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              {page === n.id && (
+                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-5 rounded-full bg-linear-to-b from-indigo-300 to-teal-300" />
+                              )}
+                              <span
+                                className={`text-base shrink-0 ${
+                                  page === n.id ? "opacity-100" : "opacity-60"
+                                }`}
+                              >
+                                {n.icon}
+                              </span>
+                              <span className="truncate">{n.label}</span>
+                            </div>
+
+                            {/* Maniglia di drag per mobile e PC */}
+                            {reorderMode && (
+                              <div
+                                {...provided.dragHandleProps}
+                                className="p-1 text-slate-400 hover:text-white touch-none cursor-grab active:cursor-grabbing text-sm"
+                              >
+                                ⋮⋮
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </nav>
+                )}
+              </Droppable>
+            </DragDropContext>
+
             <button
               onClick={() => setReorderMode((v) => !v)}
               className="mt-3 px-2 py-1 rounded-full text-[8px] uppercase tracking-[0.28em] text-slate-500/70 hover:text-slate-300 hover:bg-white/5 transition-all self-center w-fit"
             >
               {reorderMode ? "confirm" : "change order"}
             </button>
+
             <div className="mt-auto pt-5">
               <button
                 onClick={() => {
