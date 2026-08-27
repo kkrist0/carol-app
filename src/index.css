@@ -369,3 +369,7 @@ html.light-theme aside kbd {
 html.light-theme .md\:hidden button {
   color: #334155 !important;
 }
+
+.recharts-wrapper *:focus {
+  outline: none !important;
+}

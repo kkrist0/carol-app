@@ -105,34 +105,40 @@ export function InvestimentiPage({ data, update, notify, setConfirmDlg }) {
   };
 
   const handleTimelineClick = (state) => {
-    const payload = state?.activePayload || (Array.isArray(state) ? state[0]?.payload : null);
-    const active = Array.isArray(payload) ? payload[0] : payload;
-    const mk = active?.payload?.mese;
-    const valore = active?.payload?.Valore;
-    if (!mk) return;
+  if (!state) return;
 
-    const snapshot = (data.portfolioSnapshots || []).find((s) => s.mese === mk);
-    const currentMk = monthKey(new Date().toISOString());
-    
-    if (mk === currentMk && !snapshot) {
-      notify("Lo snapshot per questo mese verrà creato in automatico l'ultimo giorno dopo le 18:00.");
-      return; 
-    }
+  let itemData = state.activePayload?.[0]?.payload;
+  const index = state.activeTooltipIndex ?? state.activeIndex;
+  if (!itemData && index != null && filteredTimeline?.[index]) {
+    itemData = filteredTimeline[index];
+  }
 
-    setSnapshotMonth(mk);
-    
-    if (snapshot) {
-      setSnapshotValue(String(snapshot.valore).replace(".", ","));
-      setSnapshotNote(snapshot.note || "");
-    } else if (valore != null) {
-      setSnapshotValue(String(valore).replace(".", ","));
-      setSnapshotNote("");
-    } else {
-      setSnapshotValue("");
-      setSnapshotNote("");
-    }
-    
-    setSnapshotModalOpen(true);
+  const mk = itemData?.mese;
+  const valore = itemData?.Valore;
+
+  if (!mk) return;
+
+  const snapshot = (data.portfolioSnapshots || []).find((s) => s.mese === mk);
+  const currentMk = monthKey(new Date().toISOString());
+  
+  if (mk === currentMk && !snapshot) {
+    notify("Lo snapshot per questo mese verrà creato in automatico l'ultimo giorno dopo le 18:00.");
+    return; 
+  }
+
+  setSnapshotMonth(mk);
+  
+  if (snapshot) {
+    setSnapshotValue(String(snapshot.valore).replace(".", ","));
+    setSnapshotNote(snapshot.note || "");
+  } else if (valore != null) {
+    setSnapshotValue(String(valore).replace(".", ","));
+    setSnapshotNote("");
+  } else {
+    setSnapshotValue("");
+    setSnapshotNote("");
+  }
+  setSnapshotModalOpen(true);
   };
 
   const saveManualSnapshot = () => {
@@ -399,12 +405,12 @@ export function InvestimentiPage({ data, update, notify, setConfirmDlg }) {
                             <stop offset="100%" stopColor="#8B9DF9" stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid vertical={false} stroke="rgba(255,255,255,.05)" />
-                        <XAxis dataKey="label" tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={16} />
-                        <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={48} />
-                        {typeof ChartTip !== "undefined" && <Tooltip content={<ChartTip />} />}
-                        <Area type="monotone" dataKey="Investito" stroke="#A5B4FC" strokeWidth={2.5} fill="url(#ginv)" animationDuration={600} />
-                        <Line type="monotone" dataKey="Valore" stroke="#5EEAD4" strokeWidth={2.5} dot={false} animationDuration={600} connectNulls={false} />
+                        <CartesianGrid vertical={false} stroke="rgba(255,255,255,.05)" style={{ pointerEvents: 'none' }}/>
+                        <XAxis dataKey="label" tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={16}/>
+                        <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={48}/>
+                        <Tooltip content={<ChartTip />}/>
+                        <Area type="monotone" dataKey="Investito" stroke="#A5B4FC" strokeWidth={2.5} fill="url(#ginv)" animationDuration={600} style={{ pointerEvents: "none" }}/>
+                        <Line type="monotone" dataKey="Valore" stroke="#5EEAD4" strokeWidth={2.5} dot={false} animationDuration={600} connectNulls={false} style={{ pointerEvents: "none" }}/>
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
