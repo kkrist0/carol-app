@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { eur } from "../utils/helpers";
+import { CompanyLogo } from "./shared/CompanyLogo";
 
 export function CommandPalette({ open, onClose, nav, setPage, txs, catById, onNew }) {
   const [q, setQ] = useState("");
@@ -24,7 +25,7 @@ export function CommandPalette({ open, onClose, nav, setPage, txs, catById, onNe
     q.length > 1
       ? txs
           .filter((t) =>
-            `${t.note || ""} ${catById[t.categoria]?.nome || ""}`
+            `${t.note || ""} ${t.compagnia || ""} ${catById[t.categoria]?.nome || ""}`
               .toLowerCase()
               .includes(ql)
           )
@@ -92,10 +93,17 @@ export function CommandPalette({ open, onClose, nav, setPage, txs, catById, onNe
                 setPage("movimenti");
                 onClose();
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/10 transition-colors flex justify-between"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-white/10 transition-colors flex items-center justify-between gap-2"
             >
-              <span className="truncate">
-                {catById[t.categoria]?.icona} {t.note || catById[t.categoria]?.nome}
+              <span className="truncate flex items-center gap-2">
+                {t.compagnia ? (
+                  <span className="w-5 h-5 rounded-md bg-white/10 border border-white/10 grid place-items-center overflow-hidden shrink-0">
+                    <CompanyLogo name={t.compagnia} className="w-full h-full object-cover" fallbackNode={<span>{catById[t.categoria]?.icona || "•"}</span>} />
+                  </span>
+                ) : (
+                  <span className="shrink-0">{catById[t.categoria]?.icona || "•"}</span>
+                )}
+                <span className="truncate">{t.note || catById[t.categoria]?.nome || "Movimento"}</span>
               </span>
               <span className="text-slate-500 tabular-nums shrink-0 ml-3">
                 {eur(t.importo)}

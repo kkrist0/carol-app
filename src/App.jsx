@@ -20,6 +20,7 @@ import {
   applyTheme,
   setGlobalCurrency,
 } from "./utils/helpers";
+import { setGlobalLogoDevKey } from "./utils/logoDev";
 
 import {
   DEFAULT_SYNC_CFG,
@@ -62,7 +63,7 @@ import { storage } from "./services/storage";
 import { Spinner } from "./components/Spinner";
 import { StyleTag } from "./components/Typography";
 import { marketData } from "./services/markets";
-import { BriefcaseBusiness, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards } from "lucide-react";
+import { Archive, BriefcaseBusiness, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards } from "lucide-react";
 
 /* ============================================================
    APP PRINCIPALE
@@ -178,6 +179,11 @@ useEffect(() => {
   const selectedCurrency = data?.settings?.currency || "EUR";
   setGlobalCurrency(selectedCurrency, rates);
 }, [data?.settings?.currency, rates]);
+
+/* ---------- Gestione Logo.dev Key ---------- */
+useEffect(() => {
+  setGlobalLogoDevKey(data?.settings?.logoDevKey || "");
+}, [data?.settings?.logoDevKey]);
   
   /* ---------- Caricamento: locale subito, poi pull dal foglio ---------- */
   useEffect(() => {
@@ -982,10 +988,10 @@ useEffect(() => {
     { id: "conti", label: "Conti", icon: <WalletCards className="w-4 h-4"/> },
     { id: "viaggi", label: "Viaggi", icon: <Plane className="w-4 h-4"/> },
     { id: "investimenti", label: "Investimenti", icon: <ChartNoAxesCombined className="w-4 h-4"/> },
-    { id: "carriera", label: "Stipendio", icon: <BriefcaseBusiness className="w-4 h-4"/> },
+    { id: "carriera", label: "Lavoro", icon: <BriefcaseBusiness className="w-4 h-4"/> },
     { id: "report", label: "Report", icon: <ChartColumnBig className="w-4 h-4"/> },
     { id: "obiettivi", label: "Obiettivi", icon: <Trophy className="w-4 h-4"/> },
-    { id: "archivio", label: "Archivio", icon: <HandCoins className="w-4 h-4"/> },
+    { id: "archivio", label: "Archivio", icon: <Archive className="w-4 h-4"/> },
     { id: "impostazioni", label: "Impostazioni", icon: <Settings className="w-4 h-4"/> },
   ], []);
 
@@ -1630,7 +1636,7 @@ useEffect(() => {
             className="w-14 h-14 rounded-full bg-teal-500/15 border border-teal-400/30 backdrop-blur-xl text-teal-300 shadow-xl shadow-teal-500/10 hover:bg-teal-500/25 active:scale-95 transition-all grid place-items-center shrink-0 px-2"
             title={`Aggiungi spesa a ${currentTrip.nome}`}
           >
-            <Plane className="w-5 h-5 stroke-[2.2]" />
+            <Plane className="w-6 h-6 stroke-[2.2]"/>
           </button>
         ) : (
           /* FAB Principale (Standard) */
@@ -1639,7 +1645,7 @@ useEffect(() => {
             className="w-14 h-14 rounded-full bg-indigo-500/15 border border-indigo-400/30 backdrop-blur-xl text-indigo-300 shadow-xl shadow-indigo-500/10 hover:bg-indigo-500/25 active:scale-95 transition-all grid place-items-center shrink-0 px-2"
             title="Nuovo movimento"
           >
-            <Plus className="w-6 h-6 stroke-[2.5]" />
+            <Plus className="w-6 h-6 stroke-[2.2]" />
           </button>
         )}
       </div>
@@ -1652,7 +1658,8 @@ useEffect(() => {
             className="w-14 h-14 rounded-2xl bg-teal-500/15 border border-teal-400/30 backdrop-blur-xl text-teal-300 shadow-xl shadow-teal-500/20 hover:bg-teal-500/25 hover:scale-105 active:scale-95 transition-all grid place-items-center"
             title={`Aggiungi spesa a ${currentTrip.nome}`}
           >
-            <Plane className="w-6 h-6 stroke-[2.2]" />
+            <Plane className="w-6 h-6 stroke-[2.2]">
+            </Plane>
           </button>
         ) : (
           <button
@@ -1660,7 +1667,7 @@ useEffect(() => {
             className="w-14 h-14 rounded-2xl bg-indigo-500/15 border border-indigo-400/30 backdrop-blur-xl text-indigo-300 shadow-xl shadow-indigo-500/20 hover:bg-indigo-500/25 hover:scale-105 active:scale-95 transition-all grid place-items-center"
             title="Nuovo movimento"
           >
-            <Plus className="w-7 h-7 stroke-[2.5]" />
+            <Plus className="w-6 h-6 stroke-[2.2]"/>
           </button>
         )}
       </div>

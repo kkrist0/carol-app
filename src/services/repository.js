@@ -6,10 +6,10 @@ import { createClient } from '@supabase/supabase-js';
 const SHEET_SCHEMA = {
   transactions: {
     sheet: "Movimenti",
-    headers: ["ID", "Data", "Tipo", "Categoria", "Sottocategoria", "Importo", "Conto", "ContoDestinazione", "Metodo", "Descrizione", "Tag", "Gruppo", "EliminatoIl"],
-    pack: (st) => st.transactions.map((t) => [t.id, t.data, t.tipo, s(t.categoria), s(t.sottocategoria), t.importo, s(t.conto), s(t.contoDest), s(t.metodo), s(t.note), (t.tags || []).join("|"), s(t.gruppo), s(t.deletedAt)]),
+    headers: ["ID", "Data", "Tipo", "Categoria", "Sottocategoria", "Importo", "Conto", "ContoDestinazione", "Metodo", "Descrizione", "Tag", "Gruppo", "EliminatoIl", "Compagnia"],
+    pack: (st) => st.transactions.map((t) => [t.id, t.data, t.tipo, s(t.categoria), s(t.sottocategoria), t.importo, s(t.conto), s(t.contoDest), s(t.metodo), s(t.note), (t.tags || []).join("|"), s(t.gruppo), s(t.deletedAt), s(t.compagnia)]),
     unpack: (rows) => rows.filter((r) => s(r[0])).map((r) => {
-      const t = { id: s(r[0]), data: s(r[1]).slice(0, 10), tipo: s(r[2]) || "spesa", categoria: s(r[3]) || null, sottocategoria: s(r[4]), importo: n(r[5]), conto: s(r[6]), contoDest: s(r[7]) || undefined, metodo: s(r[8]), note: s(r[9]), tags: s(r[10]) ? s(r[10]).split("|").filter(Boolean) : [], gruppo: s(r[11]) || undefined };
+      const t = { id: s(r[0]), data: s(r[1]).slice(0, 10), tipo: s(r[2]) || "spesa", categoria: s(r[3]) || null, sottocategoria: s(r[4]), importo: n(r[5]), conto: s(r[6]), contoDest: s(r[7]) || undefined, metodo: s(r[8]), note: s(r[9]), tags: s(r[10]) ? s(r[10]).split("|").filter(Boolean) : [], gruppo: s(r[11]) || undefined, compagnia: s(r[13]) || undefined };
       if (s(r[12])) t.deletedAt = s(r[12]);
       return t;
     }),

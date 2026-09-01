@@ -72,7 +72,7 @@ export function Movimenti({ txs, catById, accById, data, setTxModal, softDelete 
     if (fConto && t.conto !== fConto && t.contoDest !== fConto) return false;
     if (fTipo && t.tipo !== fTipo) return false;
     if (dq) {
-      const s = `${t.note || ""} ${catById[t.categoria]?.nome || ""} ${t.sottocategoria || ""} ${accById[t.conto]?.nome || ""} ${(t.tags || []).join(" ")}`.toLowerCase();
+      const s = `${t.note || ""} ${t.compagnia || ""} ${catById[t.categoria]?.nome || ""} ${t.sottocategoria || ""} ${accById[t.conto]?.nome || ""} ${(t.tags || []).join(" ")}`.toLowerCase();
       const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const query = escapeRegExp(dq.toLowerCase());
       const regex = new RegExp(`\\b${query}`, 'i');

@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { getCategoryGroups, todayISO } from "../../utils/helpers";
 import { Input, Label, Select } from "../Forms";
 import Modal from "../Modal";
 import { BtnGhost, BtnPrimary } from "../Buttons";
 import { metodiEntrata, metodiSpesa } from "../../config/constants";
+import { CompanyAutocomplete } from "./CompanyAutocomplete";
 
 export function TxModal({ open, tx, onClose, onSave, data, onDelete }) {
   const isEdit = !!tx?.id;
@@ -14,6 +15,10 @@ export function TxModal({ open, tx, onClose, onSave, data, onDelete }) {
     const nomeDestinazione = data.accounts.find((a) => a.id === contoDestId)?.nome || "";
     return `Trasferimento: ${nomeOrigine} ➔ ${nomeDestinazione}`;
   }, [data.accounts]);
+
+  const existingCompanies = useMemo(() => {
+    return [...new Set((data?.transactions || []).map((t) => t.compagnia).filter(Boolean))];
+  }, [data.transactions]);
 
   useEffect(() => {
     if (open) {
@@ -37,6 +42,7 @@ export function TxModal({ open, tx, onClose, onSave, data, onDelete }) {
           categoria: tx?.categoria || "", 
           gruppo: tx?.gruppo || "", 
           sottocategoria: tx?.sottocategoria || "", 
+          compagnia: tx?.compagnia || "",
           conto: initialConto, 
           contoDest: initialContoDest, 
           metodo: tx?.metodo || defaultMetodo, 
@@ -56,6 +62,7 @@ export function TxModal({ open, tx, onClose, onSave, data, onDelete }) {
   const catGroups = getCategoryGroups(selCat);
   const spendGroups = catGroups.filter((g) => g !== "Entrate");
   const showGroupSelect = !isTr && form.tipo !== "entrata" && spendGroups.length > 1;
+  const hasLogoDev = !!(data?.settings?.logoDevKey && data.settings.logoDevKey.trim());
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   let metodiAttuali = form.tipo === "entrata" ? [...metodiEntrata] : [...metodiSpesa];
@@ -73,7 +80,7 @@ export function TxModal({ open, tx, onClose, onSave, data, onDelete }) {
     } else {
       if (!form.categoria) return;
       const gruppo = form.gruppo || (spendGroups[0] || (form.tipo === "entrata" ? "Entrate" : "Wants"));
-      onSave({ ...form, contoDest: undefined, importo, gruppo, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean) });
+      onSave({ ...form, contoDest: undefined, importo, gruppo, compagnia: form.compagnia?.trim() || undefined, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean) });
     }
   };
 
@@ -244,6 +251,17 @@ export function TxModal({ open, tx, onClose, onSave, data, onDelete }) {
                   <option value="">Nessuna</option>
                   {selCat.sottocategorie.map((s) => <option key={s} value={s}>{s}</option>)}
                 </Select>
+              </div>
+            )}
+
+            {hasLogoDev && (
+              <div className="min-w-0">
+                <CompanyAutocomplete 
+                  value={form.compagnia} 
+                  onChange={(val) => set("compagnia", val)} 
+                  existingCompanies={existingCompanies} 
+                  categoryIcon={selCat?.icona || "•"}
+                />
               </div>
             )}
 

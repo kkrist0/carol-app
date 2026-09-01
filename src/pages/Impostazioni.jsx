@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { eur } from "../utils/helpers";
+import { setGlobalLogoDevKey } from "../utils/logoDev";
 import { driveService, origineCorrente } from "../services/drive";
 import { marketData, viaPonte } from "../services/markets";
 import { Card } from "../components/Card";
@@ -48,6 +49,7 @@ export function Impostazioni({
       <PreferenzeSettings data={data} update={update} notify={notify} />
       <SyncSettings data={data} syncCfg={syncCfg} saveSyncCfg={saveSyncCfg} syncState={syncState} pushNow={pushNow} pullNow={pullNow} pendingPush={pendingPush} />
       <DriveSettings data={data} update={update} notify={notify} />
+      <LogoDevSettings data={data} update={update} notify={notify} />
       <QuotesSettings data={data} update={update} notify={notify} />
 
       <Card className="p-5 mb-4" hover={false} delay={60}>
@@ -681,6 +683,166 @@ function DriveSettings({ data, update, notify }) {
             </li>
           </ul>
         </div>
+      </div>
+    </Card>
+  );
+}
+
+function LogoDevSettings({ data, update, notify }) {
+  const currentKey = data.settings?.logoDevKey || "";
+  const [key, setKey] = useState(currentKey);
+  const [showKey, setShowKey] = useState(false);
+  const [testLogo, setTestLogo] = useState(null);
+  const [isTesting, setIsTesting] = useState(false);
+
+  useEffect(() => {
+    const k = data.settings?.logoDevKey || "";
+    const timer = setTimeout(() => {
+      setKey(k);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [data.settings?.logoDevKey]);
+
+  const isConfigured = !!(currentKey && currentKey.trim());
+
+  const salva = () => {
+    const cleanKey = key.trim();
+    update((d) => {
+      if (!d.settings) d.settings = {};
+      d.settings.logoDevKey = cleanKey;
+      return d;
+    });
+    setGlobalLogoDevKey(cleanKey);
+    notify(cleanKey ? "Chiave Logo.dev salvata" : "Chiave Logo.dev rimossa");
+  };
+
+  const rimuovi = () => {
+    setKey("");
+    update((d) => {
+      if (!d.settings) d.settings = {};
+      d.settings.logoDevKey = "";
+      return d;
+    });
+    setGlobalLogoDevKey("");
+    setTestLogo(null);
+    notify("Chiave Logo.dev rimossa");
+  };
+
+  const testaChiave = () => {
+    const k = key.trim();
+    if (!k) {
+      setTestLogo({ ok: false, msg: "Inserisci prima una chiave API." });
+      return;
+    }
+    setIsTesting(true);
+    setTestLogo(null);
+    
+    const testUrl = `https://img.logo.dev/name/Netflix?token=${encodeURIComponent(k)}&size=64&format=png&fallback=404`;
+    const img = new Image();
+    img.onload = () => {
+      setIsTesting(false);
+      setTestLogo({ ok: true, msg: "Chiave valida! Connessione a Logo.dev riuscita.", url: testUrl });
+    };
+    img.onerror = () => {
+      setIsTesting(false);
+      setTestLogo({ ok: false, msg: "Impossibile recuperare il logo. Verifica che la chiave sia corretta." });
+    };
+    img.src = testUrl;
+  };
+
+  return (
+    <Card className="p-5 mb-4" hover={false} delay={80}>
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <div>
+          <h2 className="font-display text-white">Loghi aziendali (Logo.dev)</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Mostra automaticamente i loghi ufficiali delle compagnie (es. Amazon, Netflix, Esselunga) nei tuoi movimenti.
+          </p>
+        </div>
+        <span
+          className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full border ${
+            isConfigured
+              ? "text-emerald-200 border-emerald-400/30 bg-emerald-400/10"
+              : "text-slate-500 border-white/10"
+          }`}
+        >
+          {isConfigured ? "configurata" : "non configurata"}
+        </span>
+      </div>
+
+      <div className="space-y-3 mt-3">
+        <div>
+          <Label>Chiave API pubblicabile (Publishable Key)</Label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                type={showKey ? "text" : "password"}
+                placeholder="pk_..."
+                value={key}
+                onChange={(e) => setKey(e.target.value.trim())}
+                className="pr-16 font-mono text-xs"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKey(!showKey)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs px-1"
+                title={showKey ? "Nascondi chiave" : "Mostra chiave"}
+              >
+                {showKey ? "Nascondi" : "Mostra"}
+              </button>
+            </div>
+            <BtnPrimary onClick={salva}>Salva</BtnPrimary>
+            {isConfigured && (
+              <BtnGhost onClick={rimuovi} className="text-rose-400 hover:text-rose-300">
+                Rimuovi
+              </BtnGhost>
+            )}
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Puoi ottenere gratuitamente una chiave registrandoti su{" "}
+            <a
+              href="https://www.logo.dev"
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-400 hover:underline"
+            >
+              Logo.dev
+            </a>
+            . La chiave pubblicabile (<code className="text-slate-400">pk_...</code>) è sicura da usare nel client e viene salvata solo nelle tue impostazioni.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <BtnGhost onClick={testaChiave} disabled={isTesting || !key.trim()}>
+            {isTesting ? "Verifica in corso…" : "Testa chiave"}
+          </BtnGhost>
+          {testLogo && (
+            <div className="flex items-center gap-2 text-xs">
+              {testLogo.ok ? (
+                <>
+                  {testLogo.url && (
+                    <img
+                      src={testLogo.url}
+                      alt="Test Logo"
+                      className="w-5 h-5 rounded object-contain bg-white/10"
+                    />
+                  )}
+                  <span className="text-emerald-300">{testLogo.msg}</span>
+                </>
+              ) : (
+                <span className="text-rose-400">{testLogo.msg}</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {!isConfigured && (
+          <div className="rounded-xl bg-white/3 border border-white/6 p-3">
+            <p className="text-[11px] text-slate-400">
+              💡 <b>Nota:</b> Senza la chiave API configurata, il campo "Compagnia" nel modal dei movimenti resterà nascosto e verranno utilizzate esclusivamente le icone delle categorie.
+            </p>
+          </div>
+        )}
       </div>
     </Card>
   );
