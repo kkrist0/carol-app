@@ -9,6 +9,7 @@ export const addMonthsMk = (mk, n) => { const { y, m } = parseMk(mk); const d = 
 export const endOfMonthIso = (mk) => { const { y, m } = parseMk(mk); return `${y}-${String(m + 1).padStart(2, "0")}-${String(new Date(y, m + 1, 0).getDate()).padStart(2, "0")}`; };
 export const labelMk = (mk) => { const { y, m } = parseMk(mk); const s = new Date(y, m, 1).toLocaleDateString("it-IT", { month: "long", year: "numeric" }); return s.charAt(0).toUpperCase() + s.slice(1); };
 export const labelMkShort = (mk) => { const { y, m } = parseMk(mk); return new Date(y, m, 1).toLocaleDateString("it-IT", { month: "short", year: "2-digit" }); };
+export const labelMkShortEn = (mk) => { const { y, m } = parseMk(mk); const s = new Date(y, m, 1).toLocaleDateString("en-US", { month: "short", year: "numeric" }); return s.charAt(0).toUpperCase() + s.slice(1); };
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 export const todayISO = () => new Date().toISOString().slice(0, 10);
 export const n = (v) => { const x = Number(String(v ?? "").replace(/\s/g, "").replace(",", ".")); return Number.isFinite(x) ? x : 0; };

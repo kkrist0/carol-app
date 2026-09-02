@@ -12,7 +12,7 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoDestNome, onEdi
   return (
     <div 
       onClick={() => onEdit(t)} 
-      className="group flex items-center gap-3 py-2.5 px-1 rounded-lg cursor-pointer hover:bg-white/[0.06] active:bg-white/10 transition-colors" 
+      className="group flex items-center gap-3 py-2.5 px-1 rounded-lg cursor-pointer hover:bg-white/6 active:bg-white/10 transition-colors" 
       style={{ animation: `fadeUp .4s both`, animationDelay: `${Math.min(i, 12) * 35}ms` }}
     >
       <div 
@@ -38,7 +38,7 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoDestNome, onEdi
         <p className="text-sm text-white truncate">{t.note || (isTr ? "Trasferimento tra conti" : c?.nome || "Movimento")}</p>
         <p className="text-xs text-slate-500 truncate">{[isTr ? `${contoNome || "?"} → ${contoDestNome || "?"}` : c ? c.nome + (t.sottocategoria ? " › " + t.sottocategoria : "") : null, !isTr ? contoNome : null, fmtDate(t.data)].filter(Boolean).join(" · ")}</p>
       </div>
-      <span className={`text-sm tabular-nums font-medium shrink-0 whitespace-nowrap ${isIn ? "text-emerald-300" : isTr ? "text-slate-400" : "text-slate-200"}`}>{isIn ? "+" : isTr ? "" : "−"}{eur(t.importo)}</span>
+      <span className={`text-sm tabular-nums font-medium shrink-0 whitespace-nowrap ${isIn ? "text-emerald-300" : isTr ? "text-slate-400" : "text-slate-200"}`}>{isIn ? "+" : isTr ? "" : "-"}{eur(t.importo)}</span>
     </div>
   );
 });
