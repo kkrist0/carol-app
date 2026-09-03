@@ -10,7 +10,7 @@ import { MonthNavigator } from "../components/shared/MonthNavigator";
 import { Chip, CountEur, EmptyState } from "../components/Typography";
 import { TxList } from "../components/shared/TxList";
 
-export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, cur, prev, series, chartRange, setChartRange, txs, catById, accById, insights, data, update, setTxModal, softDelete, setPage }) {
+export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, cur, series, chartRange, setChartRange, txs, catById, accById, insights, data, update, setTxModal, softDelete, setPage }) {
   const budgetTot = Object.values(data.budgets || {}).reduce((s, v) => s + v, 0);
   const budgetSpeso = Object.keys(data.budgets || {}).reduce((s, k) => s + cur.mt.filter((t) => t.tipo === "spesa" && t.categoria === k).reduce((x, t) => x + t.importo, 0), 0);
   const monthTxs = useMemo(() => txs.filter((t) => monthKey(t.data) === selMonth).slice(0, 6), [txs, selMonth]);
@@ -23,6 +23,10 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
     investimenti: savedToggles.investimenti ?? true,
     tfr: savedToggles.tfr ?? false,
   });
+
+  useEffect(() => {
+    if (!isCurrentMonth && chartRange === "MTD") setChartRange(30);
+  }, [isCurrentMonth, chartRange, setChartRange]);
 
   useEffect(() => {
     const next = {
@@ -186,17 +190,11 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
   }), [series, patrimonioToggles, investimentiAt, tfrAt, interpolateMonthly]);
 
   const deltaPatrimonio = useMemo(() => {
-    const current = patrimonioVisualizzato;
-    const previousMk = addMonthsMk(selMonth, -1);
-    const previousLiquidi = prev ? patrimonio - cur.risparmio - cur.inv : 0;
-    const previousInvestimenti = investimentiAt(previousMk);
-    const previousTfr = tfrAt(previousMk);
-    const fallbackLiquidi = previousLiquidi || 0;
-    const previous = (patrimonioToggles.liquidi ? fallbackLiquidi : 0) +
-      (patrimonioToggles.investimenti ? previousInvestimenti : 0) +
-      (patrimonioToggles.tfr ? previousTfr : 0);
-    return current - previous;
-  }, [patrimonioVisualizzato, selMonth, patrimonioToggles, investimentiAt, tfrAt, patrimonio, prev, cur]);
+    if (seriePatrimonio.length < 2) return 0;
+    const first = seriePatrimonio[0].valore || 0;
+    const last = seriePatrimonio[seriePatrimonio.length - 1].valore || 0;
+    return last - first;
+  }, [seriePatrimonio]);
 
   const totalPatrimonioComponents = (componentValues.liquidi || 0) + (componentValues.investimenti || 0) + (componentValues.tfr || 0);
 
@@ -343,6 +341,7 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
               </span>
               <div className="flex gap-1 bg-white/5 rounded-xl p-1 ml-auto">
                 {[
+                  ...(isCurrentMonth ? [{ l: "MTD", v: "MTD" }] : []),
                   { l: "1M", v: 30 }, 
                   { l: "3M", v: 90 }, 
                   { l: "1Y", v: 365 }, 
@@ -360,10 +359,10 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
                 ))}
               </div>
             </div>
-
             {/* Grafico ad Area oppure Messaggio di Selezione */}
+            
             {!(patrimonioToggles.liquidi || patrimonioToggles.investimenti || patrimonioToggles.tfr) ? (
-              <div className="h-60 sm:h-72 md:h-80 w-full flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-dashed border-white/10 bg-white/2" style={{ animation: "fadeIn .25s both" }}>
+              <div className="h-60 sm:h-72 md:h-80 w-full flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-dashed border-white/10 bg-white/2">
                 <p className="text-sm font-display text-white mb-1">
                   No data to display
                 </p>
@@ -385,7 +384,7 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
               const fmtY = (v) => (v >= 1000000 ? `${(v / 1000000).toFixed(2)}M` : v >= 1000 ? `${(v / 1000).toFixed(2)}k` : String(Math.round(v)));
 
               return (
-                <div className="h-60 sm:h-72 md:h-80 w-full -mx-2">
+                <div className="h-60 sm:h-72 md:h-80 w-full flex flex-col p-6 rounded-2xl border-white/10 bg-white/2">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={seriePatrimonio} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
                       <defs>

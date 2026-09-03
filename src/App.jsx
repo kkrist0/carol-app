@@ -526,8 +526,15 @@ useEffect(() => {
         }));
       const end = new Date(endIso + "T12:00:00");
       const out = [];
+      const firstDate = new Date(end);
+      firstDate.setDate(firstDate.getDate() - days);
+      const firstIso = `${firstDate.getFullYear()}-${String(
+        firstDate.getMonth() + 1
+      ).padStart(2, "0")}-${String(firstDate.getDate()).padStart(2, "0")}`;
       let run = start0,
         ei = 0;
+      while (ei < events.length && events[ei].d < firstIso)
+        run += events[ei++].delta;
       for (let i = days; i >= 0; i--) {
         const d = new Date(end);
         d.setDate(d.getDate() - i);
@@ -559,6 +566,10 @@ useEffect(() => {
   const [chartRange, setChartRange] = useState(30);
 
   const actualDays = useMemo(() => {
+    if (chartRange === "MTD") {
+      const endDate = new Date(anchorIso + "T12:00:00");
+      return endDate.getDate() - 1;
+    }
     if (chartRange === "all") {
       if (!txs || txs.length === 0) return 30;
       const oldestDate = new Date(txs[txs.length - 1].data);
