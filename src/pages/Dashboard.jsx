@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { eur, monthKey, todayISO, addMonthsMk, labelMk, labelMkShortEn } from "../utils/helpers";
+import { eur, monthKey, todayISO, addMonthsMk, labelMk, labelMkShortEn, parseBudgetKey } from "../utils/helpers";
 import { Card } from "../components/Card";
 import { ChartTip } from "../components/charts/ChartTip";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -10,9 +10,8 @@ import { MonthNavigator } from "../components/shared/MonthNavigator";
 import { Chip, CountEur, EmptyState } from "../components/Typography";
 import { TxList } from "../components/shared/TxList";
 
-export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, cur, series, chartRange, setChartRange, txs, catById, accById, insights, data, update, setTxModal, softDelete, setPage }) {
-  const budgetTot = Object.values(data.budgets || {}).reduce((s, v) => s + v, 0);
-  const budgetSpeso = Object.keys(data.budgets || {}).reduce((s, k) => s + cur.mt.filter((t) => t.tipo === "spesa" && t.categoria === k).reduce((x, t) => x + t.importo, 0), 0);
+export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, cur, series, chartRange, setChartRange, txs, catById, accById, data, update, setTxModal, softDelete, setPage }) {
+  const budgetEntries = Object.entries(data.budgets || {});
   const monthTxs = useMemo(() => txs.filter((t) => monthKey(t.data) === selMonth).slice(0, 6), [txs, selMonth]);
 
   /* La Dashboard può mostrare una qualsiasi combinazione dei tre blocchi
@@ -425,7 +424,7 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
           { l: "Entrate mese", v: cur.entrate, tone: "text-emerald-300" },
           { l: "Uscite mese", v: cur.uscite, tone: "text-rose-300" },
           { l: "Risparmio", v: cur.risparmio, tone: cur.risparmio >= 0 ? "text-teal-300" : "text-rose-300" },
-          { l: "Budget rimanente", v: Math.max(0, budgetTot - budgetSpeso), tone: "text-indigo-300" },
+          { l: "Investimenti mese", v: cur.inv, tone: "text-indigo-300" },
         ].map((s, i) => (
           <Card key={s.l} className="p-4" delay={60 + i * 60}>
             <p className="text-xs text-slate-400">{s.l}</p>
@@ -447,17 +446,42 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
           </div>
         </Card>
 
-        {/* Insight */}
+        {/* Budget del mese */}
         <Card className="lg:col-span-2 p-5" delay={400} hover={false}>
-          <h2 className="font-display text-white mb-3">Insight del mese</h2>
-          <div key={"in-" + selMonth} className="space-y-3">
-            {insights.map((t, i) => (
-              <div key={i} className="flex gap-3 items-start p-3 rounded-xl bg-white/4 border border-white/6" style={{ animation: `fadeUp .5s both`, animationDelay: `${120 + i * 90}ms` }}>
-                <span className="text-indigo-300 mt-0.5">✦</span>
-                <p className="text-sm text-slate-300 leading-snug">{t}</p>
-              </div>
-            ))}
-            {insights.length === 0 && <EmptyState text="Gli insight appariranno quando ci saranno movimenti nel mese." />}
+          <h2 className="font-display text-white mb-3">Budget del mese</h2>
+          <div key={"budgets-" + selMonth} className="space-y-3">
+            {budgetEntries.map(([categoryId, limit], i) => {
+              const { categoryId: parentCategoryId, subcategory } = parseBudgetKey(categoryId);
+              const budget = Number(limit) || 0;
+              const spent = cur.mt
+                .filter((t) => t.tipo === "spesa" && t.categoria === parentCategoryId && (!subcategory || t.sottocategoria === subcategory))
+                .reduce((sum, t) => sum + t.importo, 0);
+              const remainingPct = budget > 0 ? ((budget - spent) / budget) * 100 : 0;
+              const progressPct = budget > 0 ? Math.min(100, (spent / budget) * 100) : 0;
+              const category = catById[parentCategoryId];
+              const over = remainingPct < 0;
+
+              return (
+                <div key={categoryId} className="p-3 rounded-xl bg-white/4 border border-white/6" style={{ animation: `fadeUp .5s both`, animationDelay: `${120 + i * 70}ms` }}>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span>{category?.icona}</span>
+                      <span className="text-sm text-white truncate">{category?.nome || parentCategoryId}{subcategory ? ` › ${subcategory}` : ""}</span>
+                    </div>
+                    <span className={`text-xs font-semibold tabular-nums shrink-0 ${over ? "text-rose-300" : "text-teal-300"}`}>
+                      {remainingPct.toFixed(0)}% rimasto
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${progressPct}%`, background: over ? "#FB7185" : progressPct > 80 ? "#FBBF24" : (category?.colore || "#8B9DF9") }} />
+                  </div>
+                  <p className={`text-xs mt-1.5 ${over ? "text-rose-300" : "text-slate-500"}`}>
+                    {over ? `Superato di ${eur(spent - budget)}` : `${eur(Math.max(0, budget - spent))} di ${eur(budget)} disponibili`}
+                  </p>
+                </div>
+              );
+            })}
+            {budgetEntries.length === 0 && <EmptyState text="Nessun budget impostato." />}
           </div>
         </Card>
       </div>

@@ -18,6 +18,8 @@ export const splitGroups = (v) => (v == null ? [] : String(v).split(/[|,]/).map(
 export const getCategoryGroups = (cat) => (cat ? splitGroups(cat.gruppo) : []);
 export const getCategoryGroupLabel = (cat) => { const groups = getCategoryGroups(cat); return groups.length > 1 ? groups.join(" / ") : groups[0] || "Wants"; };
 export const getTxGroup = (tx, catById) => (tx?.gruppo || (tx?.categoria ? getCategoryGroups(catById?.[tx.categoria])[0] : "") || "");
+export const budgetKey = (categoryId, subcategory = "") => subcategory ? `${categoryId}::${subcategory}` : categoryId;
+export const parseBudgetKey = (key) => { const [categoryId, ...parts] = String(key).split("::"); return { categoryId, subcategory: parts.join("::") }; };
 export const annoCorr = String(new Date().getFullYear());
 export const dayCount = (a, b) => { if (!a || !b) return 0; const d = Math.round((new Date(b + "T12:00") - new Date(a + "T12:00")) / 86400000) + 1; return d > 0 ? d : 0; };
 export const tripStatus = (t) => { const o = todayISO(); return t.partenza > o ? "futuro" : t.ritorno < o ? "passato" : "corso"; };

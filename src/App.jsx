@@ -184,7 +184,7 @@ useEffect(() => {
 useEffect(() => {
   setGlobalLogoDevKey(data?.settings?.logoDevKey || "");
 }, [data?.settings?.logoDevKey]);
-  
+
   /* ---------- Caricamento: locale subito, poi pull dal foglio ---------- */
   useEffect(() => {
     (async () => {

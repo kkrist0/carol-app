@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { eur, getCategoryGroups } from "../utils/helpers";
+import { budgetKey, eur, getCategoryGroups, parseBudgetKey } from "../utils/helpers";
 import { Card } from "../components/Card";
 import { Input, Select } from "../components/Forms";
 import { BtnPrimary } from "../components/Buttons";
@@ -7,10 +7,11 @@ import { EmptyState } from "../components/Typography";
 
 export function BudgetPage({ data, update, cur, catById, notify }) {
   const [editCat, setEditCat] = useState("");
+  const [editSub, setEditSub] = useState("");
   const [editVal, setEditVal] = useState("");
-  const spentFor = (k) => cur.mt.filter((t) => t.tipo === "spesa" && t.categoria === k).reduce((s, t) => s + t.importo, 0);
   const entries = Object.entries(data.budgets || {});
   const spendCats = data.categories.filter((c) => !getCategoryGroups(c).includes("Entrate"));
+  const selectedCat = spendCats.find((c) => c.id === editCat);
 
   return (
     <div className="w-full max-w-[2400px] mx-auto">
@@ -20,23 +21,30 @@ export function BudgetPage({ data, update, cur, catById, notify }) {
       </header>
       <Card className="p-4 mb-5" hover={false} delay={60}>
         <div className="flex flex-col sm:flex-row gap-3">
-          <Select value={editCat} onChange={(e) => setEditCat(e.target.value)} className="flex-1"><option value="">Scegli categoria…</option>{spendCats.map((c) => <option key={c.id} value={c.id}>{c.icona} {c.nome}</option>)}</Select>
+          <Select value={editCat} onChange={(e) => { setEditCat(e.target.value); setEditSub(""); }} className="flex-1"><option value="">Scegli categoria…</option>{spendCats.map((c) => <option key={c.id} value={c.id}>{c.icona} {c.nome}</option>)}</Select>
+          {selectedCat?.sottocategorie?.length > 0 && (
+            <Select value={editSub} onChange={(e) => setEditSub(e.target.value)} className="flex-1">
+              <option value="">Tutta la categoria</option>
+              {selectedCat.sottocategorie.map((sub) => <option key={sub} value={sub}>{sub}</option>)}
+            </Select>
+          )}
           <Input type="number" placeholder="Limite €" value={editVal} onChange={(e) => setEditVal(e.target.value)} className="sm:w-36" />
-          <BtnPrimary onClick={() => { if (!editCat || !editVal) return; update((d) => { d.budgets[editCat] = Number(editVal); return d; }); setEditCat(""); setEditVal(""); notify("Budget aggiornato"); }}>Imposta</BtnPrimary>
+          <BtnPrimary onClick={() => { if (!editCat || !editVal) return; update((d) => { d.budgets[budgetKey(editCat, editSub)] = Number(editVal); return d; }); setEditCat(""); setEditSub(""); setEditVal(""); notify("Budget aggiornato"); }}>Imposta</BtnPrimary>
         </div>
       </Card>
       <div className="space-y-3">
         {entries.map(([k, limite], i) => {
-          const speso = spentFor(k);
+          const { categoryId, subcategory } = parseBudgetKey(k);
+          const speso = cur.mt.filter((t) => t.tipo === "spesa" && t.categoria === categoryId && (!subcategory || t.sottocategoria === subcategory)).reduce((s, t) => s + t.importo, 0);
           const pct = Math.min(100, (speso / limite) * 100);
           const over = speso > limite;
-          const c = catById[k];
+          const c = catById[categoryId];
           return (
             <Card key={k} className="p-4" delay={100 + i * 60}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2.5">
                   <span className="text-lg">{c?.icona}</span>
-                  <span className="text-sm text-white">{c?.nome}</span>
+                  <span className="text-sm text-white">{c?.nome}{subcategory ? ` › ${subcategory}` : ""}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-slate-400 tabular-nums">{eur(speso)} / {eur(limite)}</span>
