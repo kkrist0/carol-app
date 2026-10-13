@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { eur, fmtDate } from "../../utils/helpers";
+import { eur } from "../../utils/helpers";
 import { CompanyLogo } from "./CompanyLogo";
 
 // eslint-disable-next-line no-unused-vars
@@ -12,7 +12,7 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoDestNome, onEdi
   return (
     <div 
       onClick={() => onEdit(t)} 
-      className="group flex items-center gap-3 py-2.5 px-1 rounded-lg cursor-pointer hover:bg-white/6 active:bg-white/10 transition-colors" 
+      className="group flex items-center gap-3 py-3 px-1 rounded-lg cursor-pointer hover:bg-white/6 active:bg-white/10 transition-colors" 
       style={{ animation: `fadeUp .4s both`, animationDelay: `${Math.min(i, 12) * 35}ms` }}
     >
       <div 
@@ -36,9 +36,18 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoDestNome, onEdi
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm text-white truncate">{t.note || (isTr ? "Trasferimento tra conti" : c?.nome || "Movimento")}</p>
-        <p className="text-xs text-slate-500 truncate">{[isTr ? `${contoNome || "?"} → ${contoDestNome || "?"}` : c ? c.nome + (t.sottocategoria ? " › " + t.sottocategoria : "") : null, !isTr ? contoNome : null, fmtDate(t.data)].filter(Boolean).join(" · ")}</p>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          <span className="max-w-full truncate rounded-full border border-slate-600 bg-slate-800 px-3 py-1 text-[10px] text-slate-100">
+            {isTr ? `${contoNome || "?"} → ${contoDestNome || "?"}` : contoNome || "Conto non disponibile"}
+          </span>
+          {!isTr && (
+            <span className="max-w-full truncate rounded-full border border-slate-600 px-3 py-1 text-[10px] text-slate-50" style={{ background: `color-mix(in srgb, ${categoryColor} 65%, #1e293b)` }}>
+              {c?.nome || "Senza categoria"}{t.sottocategoria ? ` · ${t.sottocategoria}` : ""}
+            </span>
+          )}
+        </div>
       </div>
-      <span className={`text-sm tabular-nums font-medium shrink-0 whitespace-nowrap ${isIn ? "text-emerald-300" : isTr ? "text-slate-400" : "text-slate-200"}`}>{isIn ? "+" : isTr ? "" : "-"}{eur(t.importo)}</span>
+      <span className={`text-sm tabular-nums font-medium shrink-0 whitespace-nowrap ${isIn ? "text-emerald-300" : isTr ? "text-slate-400" : "text-rose-300"}`}>{isIn ? "+" : isTr ? "" : "-"}{eur(t.importo)}</span>
     </div>
   );
 });

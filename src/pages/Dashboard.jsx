@@ -7,7 +7,7 @@ import { usePortfolio } from "../hooks/usePortfolio";
 import { useCarrieraStats } from "../hooks/useCarriera";
 import { marketData } from "../services/markets";
 import { MonthNavigator } from "../components/shared/MonthNavigator";
-import { Chip, CountEur, EmptyState } from "../components/Typography";
+import { CountEur, EmptyState } from "../components/Typography";
 import { TxList } from "../components/shared/TxList";
 
 export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, cur, series, chartRange, setChartRange, txs, catById, accById, data, update, setTxModal, softDelete, setPage }) {
@@ -254,15 +254,12 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
                     ⟳
                   </button>
                 )}
+                <span className={`ml-auto shrink-0 text-sm font-medium tabular-nums ${deltaPatrimonio >= 0 ? "text-teal-300" : "text-rose-300"}`}>
+                  {deltaPatrimonio >= 0 ? "▲" : "▼"} {eur(Math.abs(deltaPatrimonio))}
+                </span>
               </div>
 
-              <CountEur value={patrimonioVisualizzato} cls="font-display text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight tabular-nums" />
-              
-              <div className="mt-2.5 flex items-center gap-2 flex-wrap">
-                <Chip tone={deltaPatrimonio >= 0 ? "up" : "down"}>
-                  {deltaPatrimonio >= 0 ? "▲" : "▼"} {eur(Math.abs(deltaPatrimonio))}
-                </Chip>
-              </div>
+              <CountEur value={patrimonioVisualizzato} cls="font-display text-[2rem] sm:text-[2.375rem] lg:text-[3.25rem] text-white tracking-tight tabular-nums" />
             </div>
 
             {/* Le 3 parti che compongono il patrimonio */}
@@ -281,7 +278,7 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
                     key={item.key}
                     type="button"
                     onClick={() => togglePatrimonio(item.key)}
-                    className={`w-full text-left p-3 border rounded-xl cursor-pointer group ${
+                    className={`w-full px-3 py-3.5 text-left border rounded-xl cursor-pointer group ${
                       active
                         ? "bg-white/5 border-white/12 hover:border-white/20 shadow-sm"
                         : "bg-white/5 border-white/0 text-slate-400 hover:text-white"
@@ -335,7 +332,7 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
           <div className="lg:col-span-7 flex flex-col justify-between pt-4 lg:pt-0 lg:border-l lg:border-white/5 lg:pl-6">
             {/* Selettore Tempo in alto a destra */}
             <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-xs uppercase tracking-wider text-slate-400 hidden sm:inline">
+              <span className="self-start mt-0.5 text-xs uppercase tracking-wider text-slate-400 hidden sm:inline">
                 Chart
               </span>
               <div className="flex gap-1 bg-white/5 rounded-xl p-1 ml-auto">

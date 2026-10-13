@@ -8,7 +8,7 @@ import { MonthYearSelect } from "../components/shared/MonthYearSelect";
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartTip } from "../components/charts/ChartTip";
 import { Input, Select } from "../components/Forms";
-import { Chip, CountEur, EmptyState } from "../components/Typography";
+import { CountEur, EmptyState } from "../components/Typography";
 import { TxList } from "../components/shared/TxList";
 
 export function Movimenti({ txs, catById, accById, data, setTxModal, softDelete }) {
@@ -96,6 +96,7 @@ export function Movimenti({ txs, catById, accById, data, setTxModal, softDelete 
       mk, list,
       spese: list.filter((t) => t.tipo === "spesa").reduce((s, t) => s + t.importo, 0),
       entrate: list.filter((t) => t.tipo === "entrata").reduce((s, t) => s + t.importo, 0),
+      saldo: list.filter((t) => t.tipo === "entrata").reduce((s, t) => s + t.importo, 0) - list.filter((t) => t.tipo === "spesa").reduce((s, t) => s + t.importo, 0),
     }));
   }, [filtered]);
 
@@ -296,10 +297,9 @@ export function Movimenti({ txs, catById, accById, data, setTxModal, softDelete 
                     <span className="text-slate-500 text-xs transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}>▼</span>
                     {labelMk(g.mk)}
                   </h3>
-                  <div className="flex gap-2 text-xs">
-                    {g.spese > 0 && <Chip tone="down">Spese {eur(g.spese)}</Chip>}
-                    {g.entrate > 0 && <Chip tone="up">Entrate {eur(g.entrate)}</Chip>}
-                  </div>
+                  <span className={`mr-1 shrink-0 text-sm font-medium tabular-nums ${g.saldo >= 0 ? "text-teal-300" : "text-rose-300"}`}>
+                    {g.saldo > 0 ? "+" : g.saldo < 0 ? "−" : ""}{eur(Math.abs(g.saldo))}
+                  </span>
                 </div>
                 {isExpanded && (
                   <div style={{ animation: "fadeIn .2s ease-out" }}>
