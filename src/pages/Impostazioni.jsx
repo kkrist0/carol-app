@@ -737,7 +737,7 @@ function LogoDevSettings({ data, update, notify }) {
     setIsTesting(true);
     setTestLogo(null);
     
-    const testUrl = `https://img.logo.dev/name/Netflix?token=${encodeURIComponent(k)}&size=64&format=png&fallback=404`;
+    const testUrl = `https://img.logo.dev/name/Netflix?token=${encodeURIComponent(k)}&size=64&format=png&fallback=monogram`;
     const img = new Image();
     img.onload = () => {
       setIsTesting(false);

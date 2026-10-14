@@ -12,7 +12,7 @@ export function getGlobalLogoDevKey() {
  * Genera l'URL per il logo dell'azienda tramite Logo.dev
  * Supporta sia nomi di aziende (es. "Netflix") che domini (es. "netflix.com")
  */
-export function getCompanyLogoUrl(name, { token, size = 128, format = "png", retina = true, fallback = "404" } = {}) {
+export function getCompanyLogoUrl(name, { token, size = 128, format = "jpg", retina = true, fallback = "monogram" } = {}) {
   if (!name || typeof name !== "string" || !name.trim()) return "";
   const apiKey = (token || _globalLogoDevKey || "").trim();
   if (!apiKey) return "";

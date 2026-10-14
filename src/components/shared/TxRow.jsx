@@ -3,11 +3,13 @@ import { eur } from "../../utils/helpers";
 import { CompanyLogo } from "./CompanyLogo";
 
 // eslint-disable-next-line no-unused-vars
-export const TxRow = memo(function TxRow({ t, c, contoNome, contoDestNome, onEdit, compact, i }) {
+export const TxRow = memo(function TxRow({ t, c, contoNome, contoColore, contoDestNome, contoDestColore, onEdit, compact, i }) {
   const isIn = t.tipo === "entrata";
   const isTr = t.tipo === "trasferimento";
   const categoryIcon = c?.icona || "•";
   const categoryColor = c?.colore || "#94A3B8";
+  const accountColor = contoColore || "#64748B";
+  const destinationAccountColor = contoDestColore || accountColor;
 
   return (
     <div 
@@ -36,13 +38,38 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoDestNome, onEdi
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm text-white truncate">{t.note || (isTr ? "Trasferimento tra conti" : c?.nome || "Movimento")}</p>
-        <div className="flex flex-wrap gap-1.5 mt-1.5">
-          <span className="max-w-full truncate rounded-full border border-slate-600 bg-slate-800 px-3 py-1 text-[10px] text-slate-100">
-            {isTr ? `${contoNome || "?"} → ${contoDestNome || "?"}` : contoNome || "Conto non disponibile"}
+        <div className="flex flex-nowrap gap-1.5 mt-1.5 min-w-0 overflow-hidden">
+          <span
+            className={`min-w-0 max-w-full truncate rounded-full px-3 py-1 text-[10px] font-semibold ${isTr ? "border-2 border-transparent" : "border"}`}
+            style={isTr
+              ? { background: `linear-gradient(color-mix(in srgb, ${accountColor} 10%, #F1F5F9), color-mix(in srgb, ${destinationAccountColor} 10%, #F1F5F9)) padding-box, linear-gradient(90deg, ${accountColor}, ${destinationAccountColor}) border-box` }
+              : { background: `color-mix(in srgb, ${accountColor} 10%, #F1F5F9)`, borderColor: accountColor, color: accountColor, boxShadow: `inset 0 0 0 1px ${accountColor}` }}
+          >
+            {isTr ? (
+              <>
+                <span style={{ color: accountColor }}>{contoNome || "?"}</span>
+                {" "}
+                <span style={{ backgroundImage: `linear-gradient(90deg, ${accountColor}, ${destinationAccountColor})`, color: "transparent", backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>→</span>
+                {" "}
+                <span style={{ color: destinationAccountColor }}>{contoDestNome || "?"}</span>
+              </>
+            ) : contoNome || "Conto non disponibile"}
           </span>
           {!isTr && (
-            <span className="max-w-full truncate rounded-full border border-slate-600 px-3 py-1 text-[10px] text-slate-50" style={{ background: `color-mix(in srgb, ${categoryColor} 65%, #1e293b)` }}>
-              {c?.nome || "Senza categoria"}{t.sottocategoria ? ` · ${t.sottocategoria}` : ""}
+            <span
+              className="min-w-0 max-w-full truncate shrink rounded-full px-3 py-1 text-[10px] font-semibold"
+              style={{
+                background: `color-mix(in srgb, ${categoryColor} 65%, #1e293b)`,
+                color: `color-mix(in srgb, ${categoryColor} 30%, #F1F5F9)`,
+              }}
+            >
+              <span className={t.sottocategoria ? "hidden sm:inline" : undefined}>{c?.nome || "Senza categoria"}</span>
+              {t.sottocategoria && (
+                <>
+                  <span className="hidden sm:inline"> · </span>
+                  <span>{t.sottocategoria}</span>
+                </>
+              )}
             </span>
           )}
         </div>

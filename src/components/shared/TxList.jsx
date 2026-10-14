@@ -19,7 +19,7 @@ export function TxList({ txs, catById, accById, onEdit, onDelete, compact }) {
                 <span className="h-px flex-1 bg-white/8" />
               </div>
             )}
-            <TxRow t={t} c={catById[t.categoria]} contoNome={accById[t.conto]?.nome} contoDestNome={accById[t.contoDest]?.nome} onEdit={onEdit} onDelete={onDelete} compact={compact} i={i} />
+            <TxRow t={t} c={catById[t.categoria]} contoNome={accById[t.conto]?.nome} contoColore={accById[t.conto]?.colore} contoDestNome={accById[t.contoDest]?.nome} contoDestColore={accById[t.contoDest]?.colore} onEdit={onEdit} onDelete={onDelete} compact={compact} i={i} />
           </div>
         );
       })}
