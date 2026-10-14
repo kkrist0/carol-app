@@ -11,6 +11,8 @@ export function CompanyLogo({
   alt,
   fallbackNode = null,
   style = {},
+  onLoad,
+  onError,
 }) {
   const [erroredUrl, setErroredUrl] = useState(null);
 
@@ -32,7 +34,11 @@ export function CompanyLogo({
       width={size || undefined}
       height={size || undefined}
       loading="lazy"
-      onError={() => setErroredUrl(url)}
+      onLoad={onLoad}
+      onError={() => {
+        setErroredUrl(url);
+        onError?.();
+      }}
       className={`transition-opacity duration-200 ${className}`}
       style={{ ...(size ? { width: size, height: size } : {}), ...style }}
     />

@@ -563,7 +563,7 @@ useEffect(() => {
     [txs, data]
   );
 
-  const [chartRange, setChartRange] = useState(30);
+  const [chartRange, setChartRange] = useState(isCurrentMonth ? "MTD" : 30);
 
   const actualDays = useMemo(() => {
     if (chartRange === "MTD") {

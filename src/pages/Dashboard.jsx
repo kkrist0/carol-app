@@ -24,8 +24,8 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
   });
 
   useEffect(() => {
-    if (!isCurrentMonth && chartRange === "MTD") setChartRange(30);
-  }, [isCurrentMonth, chartRange, setChartRange]);
+    setChartRange(isCurrentMonth ? "MTD" : 30);
+  }, [selMonth, isCurrentMonth, setChartRange]);
 
   useEffect(() => {
     const next = {

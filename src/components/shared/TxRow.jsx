@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { eur } from "../../utils/helpers";
 import { CompanyLogo } from "./CompanyLogo";
 
@@ -7,9 +7,13 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoColore, contoDe
   const isIn = t.tipo === "entrata";
   const isTr = t.tipo === "trasferimento";
   const categoryIcon = c?.icona || "•";
+  const categoryInitial = (c?.nome || "").trim().charAt(0).toLocaleUpperCase("it-IT") || categoryIcon;
   const categoryColor = c?.colore || "#94A3B8";
+  const iconColor = isTr ? "#475569" : categoryColor;
   const accountColor = contoColore || "#64748B";
   const destinationAccountColor = contoDestColore || accountColor;
+  const [logoStatus, setLogoStatus] = useState({ name: null, loaded: false });
+  const hasCompanyLogo = Boolean(t.compagnia && logoStatus.name === t.compagnia && logoStatus.loaded);
 
   return (
     <div 
@@ -19,21 +23,25 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoColore, contoDe
     >
       <div 
         className="w-9 h-9 rounded-xl grid place-items-center text-base shrink-0 overflow-hidden relative select-none" 
-        style={{ 
-          background: categoryColor + "1f", 
-          border: `1px solid ${categoryColor}33` 
-        }}
+        style={hasCompanyLogo
+          ? { background: "transparent", border: "none" }
+          : {
+              background: "#FFFFFF",
+              border: `2px solid ${iconColor}`,
+            }}
       >
         {isTr ? (
-          "⇄"
+          <span className="font-bold" style={{ color: iconColor }}>⇄</span>
         ) : t.compagnia ? (
           <CompanyLogo 
             name={t.compagnia} 
-            className="w-full h-full object-cover"
-            fallbackNode={<span>{categoryIcon}</span>} 
+            className="w-full h-full object-contain"
+            fallbackNode={<span className="font-bold uppercase" style={{ color: categoryColor }}>{categoryInitial}</span>}
+            onLoad={() => setLogoStatus({ name: t.compagnia, loaded: true })}
+            onError={() => setLogoStatus({ name: t.compagnia, loaded: false })}
           />
         ) : (
-          categoryIcon
+          <span className="font-bold uppercase" style={{ color: categoryColor }}>{categoryInitial}</span>
         )}
       </div>
       <div className="min-w-0 flex-1">
@@ -49,7 +57,7 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoColore, contoDe
               <>
                 <span style={{ color: accountColor }}>{contoNome || "?"}</span>
                 {" "}
-                <span style={{ backgroundImage: `linear-gradient(90deg, ${accountColor}, ${destinationAccountColor})`, color: "transparent", backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>→</span>
+                <span className="font-bold" style={{ backgroundImage: `linear-gradient(90deg, ${accountColor}, ${destinationAccountColor})`, color: "transparent", backgroundClip: "text", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>→</span>
                 {" "}
                 <span style={{ color: destinationAccountColor }}>{contoDestNome || "?"}</span>
               </>
