@@ -66,12 +66,25 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
         }
         refreshCreditTag(d, current.movimentoId);
         if (amount > appliedToExpense) {
+          let category = d.categories.find((item) => item.nome.trim().toLocaleLowerCase("it-IT") === "arrotondamento credito");
+          if (!category) {
+            category = {
+              id: uid(),
+              nome: "Arrotondamento Credito",
+              gruppo: "Entrate",
+              icona: "↗️",
+              colore: "#34D399",
+              sottocategorie: [],
+              ordine: Math.max(-1, ...d.categories.map((item) => item.ordine ?? -1)) + 1,
+            };
+            d.categories.push(category);
+          }
           d.transactions.unshift({
             id: uid(),
             tipo: "entrata",
             importo: amount - appliedToExpense,
             data: form.data,
-            categoria: null,
+            categoria: category.id,
             conto: form.conto || linkedTransaction.conto || d.accounts[0]?.id || "",
             metodo: "Bonifico",
             note: `Arrotondamento Credito · ${current.persona}`,
