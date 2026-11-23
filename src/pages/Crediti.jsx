@@ -148,6 +148,7 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
             "Grazie!",
           ].join("\n");
           const mailto = `mailto:${encodeURIComponent(credit.email || "")}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+          const gmailComposeUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(credit.email || "")}&su=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
           return (
             <Card key={credit.id} className="p-5 relative overflow-hidden" delay={60 + index * 50}>
               <div className="flex items-start justify-between gap-3">
@@ -187,7 +188,15 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
                 )}
                 {paid && <span className="text-xs text-emerald-300 px-2 py-2"><CircleCheck className="w-3.5 h-3.5 inline mr-1" />Credito saldato</span>}
                 {canSendReminder ? (
-                  <a href={mailto} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-200 text-xs hover:bg-white/10 hover:border-white/20 transition-all">
+                  <a
+                    href={mailto}
+                    onClick={(event) => {
+                      if (window.matchMedia("(pointer: coarse)").matches) return;
+                      event.preventDefault();
+                      window.open(gmailComposeUrl, "_blank", "noopener,noreferrer");
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-200 text-xs hover:bg-white/10 hover:border-white/20 transition-all"
+                  >
                     <Mail className="w-3.5 h-3.5 inline mr-1" />Prepara email
                   </a>
                 ) : credit.email && !paid ? (
