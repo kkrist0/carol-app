@@ -4,6 +4,7 @@ import { BtnGhost, BtnPrimary } from "../components/Buttons";
 import { Card } from "../components/Card";
 import { Input, Label, Select } from "../components/Forms";
 import Modal from "../components/Modal";
+import { CompanyAutocomplete } from "../components/shared/CompanyAutocomplete";
 import { eur, fmtDate, todayISO, uid } from "../utils/helpers";
 
 const FREQUENCIES = [
@@ -43,6 +44,13 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
     () => [...(data.recurringPayments || [])].sort((a, b) => a.prossimaData.localeCompare(b.prossimaData)),
     [data.recurringPayments]
   );
+  const existingCompanies = useMemo(
+    () => [...new Set([
+      ...(data.transactions || []).map((transaction) => transaction.compagnia),
+      ...items.map((item) => item.compagnia),
+    ].filter(Boolean))],
+    [data.transactions, items]
+  );
   const activeItems = items.filter((item) => item.attivo);
   const monthlyTotal = activeItems.reduce((sum, item) => {
     const monthlyAmount = item.frequenza === "weekly" ? item.importo * 52 / 12
@@ -67,6 +75,8 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
         importo: current.importo,
         data: todayISO(),
         categoria: current.categoria || null,
+        sottocategoria: current.sottocategoria || "",
+        compagnia: current.compagnia || undefined,
         conto: current.conto || d.accounts[0].id,
         metodo: "Addebito",
         note: `Pagamento ricorrente: ${current.nome}`,
@@ -193,6 +203,8 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
           entry={editing}
           categories={data.categories}
           accounts={data.accounts}
+          settings={data.settings}
+          existingCompanies={existingCompanies}
           onClose={() => setEditing(null)}
           onSave={(entry) => {
             update((d) => {
@@ -216,19 +228,23 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
   );
 }
 
-function RecurringModal({ entry, categories, accounts, onClose, onSave }) {
+function RecurringModal({ entry, categories, accounts, settings, existingCompanies, onClose, onSave }) {
   const [form, setForm] = useState(() => ({
     nome: entry?.nome || "",
     importo: entry?.importo ?? "",
     frequenza: entry?.frequenza || "monthly",
     prossimaData: entry?.prossimaData || todayISO(),
     categoria: entry?.categoria || "",
+    sottocategoria: entry?.sottocategoria || "",
+    compagnia: entry?.compagnia || "",
     conto: entry?.conto || accounts[0]?.id || "",
     rateRimanenti: entry?.rateRimanenti ?? "",
     attivo: entry?.attivo ?? true,
   }));
   if (!entry) return null;
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const selectedCategory = categories.find((category) => category.id === form.categoria);
+  const hasLogoDev = Boolean(settings?.logoDevKey?.trim());
   const save = (event) => {
     event.preventDefault();
     if (!form.nome.trim() || Number(form.importo) <= 0 || !form.prossimaData || !form.conto) return;
@@ -241,6 +257,8 @@ function RecurringModal({ entry, categories, accounts, onClose, onSave }) {
       importo: Number(form.importo),
       rateRimanenti,
       categoria: form.categoria || null,
+      sottocategoria: selectedCategory?.sottocategorie?.includes(form.sottocategoria) ? form.sottocategoria : "",
+      compagnia: form.compagnia.trim() || undefined,
     });
   };
   return (
@@ -258,9 +276,28 @@ function RecurringModal({ entry, categories, accounts, onClose, onSave }) {
           <p className="text-[11px] text-slate-500 mt-1">Il conteggio diminuisce a ogni pagamento; alla fine il finanziamento viene completato.</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><Label>Categoria</Label><Select value={form.categoria} onChange={(event) => set("categoria", event.target.value)}><option value="">Nessuna</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.nome}</option>)}</Select></div>
+          <div><Label>Categoria</Label><Select value={form.categoria} onChange={(event) => setForm((current) => ({ ...current, categoria: event.target.value, sottocategoria: "" }))}><option value="">Nessuna</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.nome}</option>)}</Select></div>
           <div><Label>Conto</Label><Select required value={form.conto} onChange={(event) => set("conto", event.target.value)}><option value="">Seleziona</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.nome}</option>)}</Select></div>
         </div>
+        {selectedCategory?.sottocategorie?.length > 0 && (
+          <div>
+            <Label>Sottocategoria</Label>
+            <Select value={form.sottocategoria} onChange={(event) => set("sottocategoria", event.target.value)}>
+              <option value="">Nessuna</option>
+              {selectedCategory.sottocategorie.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}
+            </Select>
+          </div>
+        )}
+        {hasLogoDev && (
+          <div className="min-w-0">
+            <CompanyAutocomplete
+              value={form.compagnia}
+              onChange={(value) => set("compagnia", value)}
+              existingCompanies={existingCompanies}
+              categoryIcon={selectedCategory?.icona || "•"}
+            />
+          </div>
+        )}
         {!accounts.length && <p className="text-xs text-amber-300">Crea prima un conto per poter registrare il pagamento nei movimenti.</p>}
         <div className="flex justify-end gap-2 pt-2">
           <BtnGhost type="button" onClick={onClose}>Annulla</BtnGhost>

@@ -46,13 +46,15 @@ const SHEET_SCHEMA = {
   },
   recurringPayments: {
     sheet: "PagamentiRicorrenti",
-    headers: ["ID", "Nome", "Importo", "Frequenza", "ProssimaData", "Categoria", "Conto", "Attivo", "RateRimanenti"],
-    pack: (st) => (st.recurringPayments || []).map((p) => [p.id, p.nome, p.importo, p.frequenza, p.prossimaData, s(p.categoria), s(p.conto), p.attivo ? "SI" : "NO", p.rateRimanenti ?? ""]),
+    headers: ["ID", "Nome", "Importo", "Frequenza", "ProssimaData", "Categoria", "Conto", "Attivo", "RateRimanenti", "Sottocategoria", "Compagnia"],
+    pack: (st) => (st.recurringPayments || []).map((p) => [p.id, p.nome, p.importo, p.frequenza, p.prossimaData, s(p.categoria), s(p.conto), p.attivo ? "SI" : "NO", p.rateRimanenti ?? "", s(p.sottocategoria), s(p.compagnia)]),
     unpack: (rows) => rows.filter((r) => s(r[0])).map((r) => ({
       id: s(r[0]), nome: s(r[1]), importo: n(r[2]), frequenza: s(r[3]) || "monthly",
       prossimaData: s(r[4]).slice(0, 10), categoria: s(r[5]) || null, conto: s(r[6]),
       attivo: s(r[7]).toUpperCase() !== "NO",
       rateRimanenti: s(r[8]) === "" ? null : n(r[8]),
+      sottocategoria: s(r[9]),
+      compagnia: s(r[10]) || undefined,
     })),
   },
   credits: {
