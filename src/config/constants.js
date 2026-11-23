@@ -68,6 +68,8 @@ export function freshData(withDemo) {
     goals: [
       { id: uid(), nome: "Fondo emergenza", target: 5000, salvato: 2600, colore: "#5EEAD4" },
     ],
+    recurringPayments: [],
+    credits: [],
     trips: [],
     tripExpenses: [],
     wishlist: [],

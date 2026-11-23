@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { eur, monthKey, todayISO, addMonthsMk, labelMk, labelMkShortEn, parseBudgetKey } from "../utils/helpers";
+import { ArrowDownRight, CalendarClock } from "lucide-react";
+import { eur, fmtDate, monthKey, todayISO, addMonthsMk, labelMk, labelMkShortEn, parseBudgetKey } from "../utils/helpers";
 import { Card } from "../components/Card";
 import { ChartTip } from "../components/charts/ChartTip";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -13,6 +14,19 @@ import { TxList } from "../components/shared/TxList";
 export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, cur, series, chartRange, setChartRange, txs, catById, accById, data, update, setTxModal, softDelete, setPage }) {
   const budgetEntries = Object.entries(data.budgets || {});
   const monthTxs = useMemo(() => txs.filter((t) => monthKey(t.data) === selMonth).slice(0, 6), [txs, selMonth]);
+  const openCredits = useMemo(
+    () => (data.credits || [])
+      .filter((credit) => credit.importo > credit.riscosso)
+      .sort((a, b) => (a.scadenza || "9999-12-31").localeCompare(b.scadenza || "9999-12-31")),
+    [data.credits]
+  );
+  const creditsDue = openCredits.reduce((sum, credit) => sum + credit.importo - credit.riscosso, 0);
+  const monthRecurring = useMemo(
+    () => (data.recurringPayments || [])
+      .filter((payment) => payment.attivo && payment.prossimaData?.slice(0, 7) === selMonth)
+      .sort((a, b) => a.prossimaData.localeCompare(b.prossimaData)),
+    [data.recurringPayments, selMonth]
+  );
 
   /* La Dashboard può mostrare una qualsiasi combinazione dei tre blocchi
      patrimoniali. I valori vengono letti dalle sezioni Investimenti e Stipendio/TFR. */
@@ -429,6 +443,57 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
           </Card>
         ))}
       </div>
+
+      <section className="mb-5" aria-label={`Crediti e pagamenti ricorrenti di ${labelMk(selMonth)}`}>
+        <h2 className="font-display text-white mb-3">Da tenere d’occhio · {labelMk(selMonth)}</h2>
+        <div className="grid lg:grid-cols-2 gap-4">
+          <Card className="p-5 min-w-0" delay={300} hover={false}>
+            <button onClick={() => setPage("crediti")} className="w-full flex items-center justify-between gap-3 text-left">
+              <div>
+                <p className="text-xs text-slate-400">Crediti da ricevere</p>
+                <p className="font-display text-xl text-amber-200 mt-1 tabular-nums">{eur(creditsDue)}</p>
+              </div>
+              <ArrowDownRight className="w-5 h-5 text-amber-200 shrink-0" />
+            </button>
+            <div className="mt-3 space-y-2">
+              {openCredits.slice(0, 4).map((credit) => (
+                <button key={credit.id} onClick={() => setPage("crediti")} className="w-full flex items-center justify-between gap-3 border-t border-white/5 pt-2 text-left">
+                  <span className="min-w-0">
+                    <span className="block text-sm text-slate-200 truncate">{credit.persona}</span>
+                    <span className="block text-xs text-slate-500 truncate">{credit.descrizione || "Credito aperto"}{credit.scadenza ? ` · entro ${fmtDate(credit.scadenza)}` : ""}</span>
+                  </span>
+                  <span className="text-sm text-amber-200 tabular-nums shrink-0">{eur(credit.importo - credit.riscosso)}</span>
+                </button>
+              ))}
+              {openCredits.length === 0 && <p className="text-xs text-slate-500 pt-2">Non hai crediti aperti.</p>}
+              {openCredits.length > 4 && <button onClick={() => setPage("crediti")} className="text-xs text-indigo-300 hover:text-indigo-200">Vedi tutti i {openCredits.length} crediti →</button>}
+            </div>
+          </Card>
+
+          <Card className="p-5 min-w-0" delay={340} hover={false}>
+            <button onClick={() => setPage("ricorrenti")} className="w-full flex items-center justify-between gap-3 text-left">
+              <div>
+                <p className="text-xs text-slate-400">Pagamenti ricorrenti in scadenza</p>
+                <p className="font-display text-xl text-indigo-200 mt-1">{monthRecurring.length} <span className="text-sm font-normal text-slate-400">{monthRecurring.length === 1 ? "pagamento" : "pagamenti"}</span></p>
+              </div>
+              <CalendarClock className="w-5 h-5 text-indigo-200 shrink-0" />
+            </button>
+            <div className="mt-3 space-y-2">
+              {monthRecurring.slice(0, 4).map((payment) => (
+                <button key={payment.id} onClick={() => setPage("ricorrenti")} className="w-full flex items-center justify-between gap-3 border-t border-white/5 pt-2 text-left">
+                  <span className="min-w-0">
+                    <span className="block text-sm text-slate-200 truncate">{payment.nome}</span>
+                    <span className="block text-xs text-slate-500">{fmtDate(payment.prossimaData)}</span>
+                  </span>
+                  <span className="text-sm text-indigo-200 tabular-nums shrink-0">{eur(payment.importo)}</span>
+                </button>
+              ))}
+              {monthRecurring.length === 0 && <p className="text-xs text-slate-500 pt-2">Nessun pagamento in scadenza questo mese.</p>}
+              {monthRecurring.length > 4 && <button onClick={() => setPage("ricorrenti")} className="text-xs text-indigo-300 hover:text-indigo-200">Vedi tutti i {monthRecurring.length} pagamenti →</button>}
+            </div>
+          </Card>
+        </div>
+      </section>
 
       <div className="grid lg:grid-cols-5 gap-5">
         {/* Movimenti del mese */}

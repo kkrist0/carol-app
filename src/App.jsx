@@ -59,11 +59,13 @@ import { Report } from "./pages/Report";
 import { Obiettivi } from "./pages/Obiettivi";
 import { ArchivioPage } from "./pages/Archivio";
 import { Impostazioni } from "./pages/Impostazioni";
+import { Ricorrenti } from "./pages/Ricorrenti";
+import { Crediti } from "./pages/Crediti";
 import { storage } from "./services/storage";
 import { Spinner } from "./components/Spinner";
 import { StyleTag } from "./components/Typography";
 import { marketData } from "./services/markets";
-import { Archive, BriefcaseBusiness, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards } from "lucide-react";
+import { Archive, BriefcaseBusiness, CalendarClock, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards } from "lucide-react";
 
 /* ============================================================
    APP PRINCIPALE
@@ -121,6 +123,8 @@ export default function App() {
     });
     if (!d.budgets) d.budgets = {};
     if (!d.goals) d.goals = [];
+    if (!d.recurringPayments) d.recurringPayments = [];
+    if (!d.credits) d.credits = [];
     if (!d.trips) d.trips = [];
     if (!d.tripExpenses) d.tripExpenses = [];
     if (!d.wishlist) d.wishlist = [];
@@ -994,6 +998,8 @@ useEffect(() => {
   const NAV = useMemo(() => [
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="w-4 h-4"/> },
     { id: "movimenti", label: "Movimenti", icon: <HandCoins className="w-4 h-4"/> },
+    { id: "ricorrenti", label: "Ricorrenti", icon: <CalendarClock className="w-4 h-4"/> },
+    { id: "crediti", label: "Crediti", icon: <HandCoins className="w-4 h-4"/> },
     { id: "budget", label: "Budget", icon: <Target className="w-4 h-4"/> },
     { id: "categorie", label: "Categorie", icon: <Tags className="w-4 h-4"/> },
     { id: "conti", label: "Conti", icon: <WalletCards className="w-4 h-4"/> },
@@ -1344,6 +1350,12 @@ useEffect(() => {
               <Movimenti
                 {...{ txs, catById, accById, data, setTxModal, softDelete }}
               />
+            )}
+            {page === "ricorrenti" && (
+              <Ricorrenti {...{ data, update, notify, setConfirmDlg }} />
+            )}
+            {page === "crediti" && (
+              <Crediti {...{ data, update, notify, setConfirmDlg }} />
             )}
             {page === "budget" && (
               <BudgetPage {...{ data, update, cur, catById, notify }} />

@@ -44,6 +44,25 @@ const SHEET_SCHEMA = {
     pack: (st) => (st.goals || []).map((g) => [g.id, g.nome, g.target, g.salvato, g.colore]),
     unpack: (rows) => rows.filter((r) => s(r[0])).map((r) => ({ id: s(r[0]), nome: s(r[1]), target: n(r[2]), salvato: n(r[3]), colore: s(r[4]) || "#5EEAD4" })),
   },
+  recurringPayments: {
+    sheet: "PagamentiRicorrenti",
+    headers: ["ID", "Nome", "Importo", "Frequenza", "ProssimaData", "Categoria", "Conto", "Attivo"],
+    pack: (st) => (st.recurringPayments || []).map((p) => [p.id, p.nome, p.importo, p.frequenza, p.prossimaData, s(p.categoria), s(p.conto), p.attivo ? "SI" : "NO"]),
+    unpack: (rows) => rows.filter((r) => s(r[0])).map((r) => ({
+      id: s(r[0]), nome: s(r[1]), importo: n(r[2]), frequenza: s(r[3]) || "monthly",
+      prossimaData: s(r[4]).slice(0, 10), categoria: s(r[5]) || null, conto: s(r[6]),
+      attivo: s(r[7]).toUpperCase() !== "NO",
+    })),
+  },
+  credits: {
+    sheet: "Crediti",
+    headers: ["ID", "Persona", "Descrizione", "Importo", "Riscosso", "Scadenza", "Note", "MovimentoID"],
+    pack: (st) => (st.credits || []).map((c) => [c.id, c.persona, s(c.descrizione), c.importo, c.riscosso, s(c.scadenza), s(c.note), s(c.movimentoId)]),
+    unpack: (rows) => rows.filter((r) => s(r[0])).map((r) => ({
+      id: s(r[0]), persona: s(r[1]), descrizione: s(r[2]), importo: n(r[3]),
+      riscosso: n(r[4]), scadenza: s(r[5]).slice(0, 10), note: s(r[6]), movimentoId: s(r[7]) || null,
+    })),
+  },
   groups: {
     sheet: "Gruppi",
     headers: ["Nome"],
@@ -298,7 +317,7 @@ export function uniscePreservando(locale, remoto) {
   });
   return out;
 };
-export const syncableState = (d) => ({ transactions: d.transactions, accounts: d.accounts, accountTypes: d.accountTypes, categories: d.categories, budgets: d.budgets, goals: d.goals, groups: d.groups, trips: d.trips || [], tripExpenses: d.tripExpenses || [], wishlist: d.wishlist || [], jobs: d.jobs || [], salaryEvents: d.salaryEvents || [], assets: d.assets || [], trades: d.trades || [], portfolioSnapshots: d.portfolioSnapshots || [], payslips: d.payslips || [], tfrEntries: d.tfrEntries || [], documenti: d.documenti || [], quotes: d.quotes || {} });
+export const syncableState = (d) => ({ transactions: d.transactions, accounts: d.accounts, accountTypes: d.accountTypes, categories: d.categories, budgets: d.budgets, goals: d.goals, recurringPayments: d.recurringPayments || [], credits: d.credits || [], groups: d.groups, trips: d.trips || [], tripExpenses: d.tripExpenses || [], wishlist: d.wishlist || [], jobs: d.jobs || [], salaryEvents: d.salaryEvents || [], assets: d.assets || [], trades: d.trades || [], portfolioSnapshots: d.portfolioSnapshots || [], payslips: d.payslips || [], tfrEntries: d.tfrEntries || [], documenti: d.documenti || [], quotes: d.quotes || {} });
 
 export const repository = new FinanceRepository();
 export const SCHEMA_KEYS = Object.keys(SHEET_SCHEMA);
