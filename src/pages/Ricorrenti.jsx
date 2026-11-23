@@ -29,6 +29,14 @@ function nextOccurrence(date, frequency) {
   return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
 }
 
+function finalOccurrence(date, frequency, remainingRates) {
+  let finalDate = date;
+  for (let rate = 1; rate < remainingRates; rate += 1) {
+    finalDate = nextOccurrence(finalDate, frequency);
+  }
+  return finalDate;
+}
+
 export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
   const [editing, setEditing] = useState(null);
   const items = useMemo(
@@ -62,13 +70,22 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
         conto: current.conto || d.accounts[0].id,
         metodo: "Addebito",
         note: `Pagamento ricorrente: ${current.nome}`,
-        tags: ["ricorrente"],
+        tags: [],
       });
       d.transactions.sort((a, b) => b.data.localeCompare(a.data));
-      current.prossimaData = nextOccurrence(current.prossimaData, current.frequenza);
+      if (Number.isInteger(current.rateRimanenti) && current.rateRimanenti > 0) {
+        current.rateRimanenti -= 1;
+      }
+      if (current.rateRimanenti === 0) {
+        current.attivo = false;
+      } else {
+        current.prossimaData = nextOccurrence(current.prossimaData, current.frequenza);
+      }
       return d;
     });
-    notify(`Pagamento di ${item.nome} registrato`);
+    notify(item.rateRimanenti === 1
+      ? `Ultima rata di ${item.nome} registrata: finanziamento completato`
+      : `Pagamento di ${item.nome} registrato`);
   };
 
   const toggleActive = (item) => update((d) => {
@@ -107,8 +124,9 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {items.map((item, index) => {
           const overdue = item.attivo && item.prossimaData < todayISO();
+          const completed = item.rateRimanenti === 0;
           return (
-            <Card key={item.id} className="p-5 relative overflow-hidden" delay={60 + index * 50}>
+            <Card key={item.id} className="p-5 relative overflow-hidden flex flex-col" delay={60 + index * 50}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-white truncate">{item.nome}</p>
@@ -116,14 +134,31 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
                     {FREQUENCIES.find((frequency) => frequency.value === item.frequenza)?.label || "Ogni mese"}
                     {" · "}{data.accounts.find((account) => account.id === item.conto)?.nome || "Conto non disponibile"}
                   </p>
+                  {Number.isInteger(item.rateRimanenti) && item.rateRimanenti > 0 && (
+                    <>
+                      <div className="flex items-baseline gap-1 mt-1 text-xs">
+  <p className="text-indigo-300">
+    {item.rateRimanenti} {item.rateRimanenti === 1 ? "rata rimanente" : "rate rimanenti"}
+  </p>
+  <span className="text-slate-400">
+    · {eur(item.importo * item.rateRimanenti)}
+  </span>
+</div>
+                    </>
+                  )}
                 </div>
                 <p className="text-white tabular-nums font-medium shrink-0">{eur(item.importo)}</p>
               </div>
-              <div className="mt-4 flex items-center justify-between gap-2">
-                <p className={`text-xs ${overdue ? "text-rose-300" : "text-slate-400"}`}>
-                  {item.attivo ? `${overdue ? "Scaduto · " : "Prossimo · "}${fmtDate(item.prossimaData)}` : "In pausa"}
-                </p>
-                {!item.attivo && <span className="text-[10px] uppercase tracking-wider text-slate-500">Sospeso</span>}
+              <div className="mt-auto pt-4 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <p className={`text-xs ${overdue ? "text-rose-300" : "text-slate-400"}`}>
+                    {item.attivo ? `${overdue ? "Scaduto · " : "Prossimo · "}${fmtDate(item.prossimaData)}` : completed ? "Finanziamento completato" : "In pausa"}
+                  </p>
+                  {Number.isInteger(item.rateRimanenti) && item.rateRimanenti > 0 && (
+                    <p className="text-xs text-slate-400">Termine · {fmtDate(finalOccurrence(item.prossimaData, item.frequenza, item.rateRimanenti))}</p>
+                  )}
+                </div>
+                {!item.attivo && <span className={`text-[10px] uppercase tracking-wider ${completed ? "text-emerald-300" : "text-slate-500"}`}>{completed ? "Completato" : "Sospeso"}</span>}
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
                 {item.attivo && (
@@ -132,9 +167,11 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
                   </BtnPrimary>
                 )}
                 <BtnGhost onClick={() => setEditing(item)} className="px-3! py-1.5! text-xs!">Modifica</BtnGhost>
-                <button onClick={() => toggleActive(item)} className="text-xs text-slate-500 hover:text-white px-2">
-                  {item.attivo ? <><Pause className="w-3.5 h-3.5 inline mr-1" />Pausa</> : <><Play className="w-3.5 h-3.5 inline mr-1" />Riattiva</>}
-                </button>
+                {!completed && (
+                  <button onClick={() => toggleActive(item)} className="text-xs text-slate-500 hover:text-white px-2">
+                    {item.attivo ? <><Pause className="w-3.5 h-3.5 inline mr-1" />Pausa</> : <><Play className="w-3.5 h-3.5 inline mr-1" />Riattiva</>}
+                  </button>
+                )}
                 <button onClick={() => deleteItem(item)} aria-label={`Elimina ${item.nome}`} className="ml-auto text-slate-600 hover:text-rose-300 p-1">
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -160,7 +197,13 @@ export function Ricorrenti({ data, update, notify, setConfirmDlg }) {
           onSave={(entry) => {
             update((d) => {
               const index = d.recurringPayments.findIndex((current) => current.id === entry.id);
-              if (index >= 0) d.recurringPayments[index] = entry;
+              if (index >= 0) {
+                const previous = d.recurringPayments[index];
+                d.recurringPayments[index] = {
+                  ...entry,
+                  attivo: previous.rateRimanenti === 0 && entry.rateRimanenti !== 0 ? true : entry.attivo,
+                };
+              }
               else d.recurringPayments.push(entry);
               return d;
             });
@@ -181,6 +224,7 @@ function RecurringModal({ entry, categories, accounts, onClose, onSave }) {
     prossimaData: entry?.prossimaData || todayISO(),
     categoria: entry?.categoria || "",
     conto: entry?.conto || accounts[0]?.id || "",
+    rateRimanenti: entry?.rateRimanenti ?? "",
     attivo: entry?.attivo ?? true,
   }));
   if (!entry) return null;
@@ -188,11 +232,14 @@ function RecurringModal({ entry, categories, accounts, onClose, onSave }) {
   const save = (event) => {
     event.preventDefault();
     if (!form.nome.trim() || Number(form.importo) <= 0 || !form.prossimaData || !form.conto) return;
+    const rateRimanenti = form.rateRimanenti === "" ? null : Number(form.rateRimanenti);
+    if (rateRimanenti !== null && (!Number.isInteger(rateRimanenti) || rateRimanenti < 0 || (rateRimanenti === 0 && entry.rateRimanenti !== 0))) return;
     onSave({
       id: entry.id || uid(),
       ...form,
       nome: form.nome.trim(),
       importo: Number(form.importo),
+      rateRimanenti,
       categoria: form.categoria || null,
     });
   };
@@ -205,6 +252,11 @@ function RecurringModal({ entry, categories, accounts, onClose, onSave }) {
           <div><Label>Frequenza</Label><Select value={form.frequenza} onChange={(event) => set("frequenza", event.target.value)}>{FREQUENCIES.map((frequency) => <option key={frequency.value} value={frequency.value}>{frequency.label}</option>)}</Select></div>
         </div>
         <div><Label>Prossima scadenza</Label><Input required type="date" value={form.prossimaData} onChange={(event) => set("prossimaData", event.target.value)} /></div>
+        <div>
+          <Label>Rate rimanenti (facoltativo)</Label>
+          <Input type="number" min={entry.rateRimanenti === 0 ? "0" : "1"} step="1" value={form.rateRimanenti} onChange={(event) => set("rateRimanenti", event.target.value)} placeholder="Es. 24 · lascia vuoto per sempre" />
+          <p className="text-[11px] text-slate-500 mt-1">Il conteggio diminuisce a ogni pagamento; alla fine il finanziamento viene completato.</p>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Categoria</Label><Select value={form.categoria} onChange={(event) => set("categoria", event.target.value)}><option value="">Nessuna</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.nome}</option>)}</Select></div>
           <div><Label>Conto</Label><Select required value={form.conto} onChange={(event) => set("conto", event.target.value)}><option value="">Seleziona</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.nome}</option>)}</Select></div>

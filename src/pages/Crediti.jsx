@@ -88,7 +88,7 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
             conto: form.conto || linkedTransaction.conto || d.accounts[0]?.id || "",
             metodo: "Bonifico",
             note: `Arrotondamento Credito · ${current.persona}`,
-            tags: ["credito"],
+            tags: [],
           });
           d.transactions.sort((a, b) => b.data.localeCompare(a.data));
         }
