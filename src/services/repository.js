@@ -16,9 +16,9 @@ const SHEET_SCHEMA = {
   },
   accounts: {
     sheet: "Conti",
-    headers: ["ID", "Nome", "Tipo", "Icona", "Colore", "SaldoIniziale"],
-    pack: (st) => st.accounts.map((a) => [a.id, a.nome, a.tipo, a.icona, a.colore, a.saldoIniziale]),
-    unpack: (rows) => rows.filter((r) => s(r[0])).map((r) => ({ id: s(r[0]), nome: s(r[1]), tipo: s(r[2]) || "Altro", icona: s(r[3]) || "💼", colore: s(r[4]) || "#8B9DF9", saldoIniziale: n(r[5]) })),
+    headers: ["ID", "Nome", "Tipo", "Icona", "Colore", "SaldoIniziale", "IBAN"],
+    pack: (st) => st.accounts.map((a) => [a.id, a.nome, a.tipo, a.icona, a.colore, a.saldoIniziale, s(a.iban)]),
+    unpack: (rows) => rows.filter((r) => s(r[0])).map((r) => ({ id: s(r[0]), nome: s(r[1]), tipo: s(r[2]) || "Altro", icona: s(r[3]) || "💼", colore: s(r[4]) || "#8B9DF9", saldoIniziale: n(r[5]), iban: s(r[6]) })),
   },
   accountTypes: {
     sheet: "TipiConto",
@@ -57,11 +57,12 @@ const SHEET_SCHEMA = {
   },
   credits: {
     sheet: "Crediti",
-    headers: ["ID", "Persona", "Descrizione", "Importo", "Riscosso", "Scadenza", "Note", "MovimentoID"],
-    pack: (st) => (st.credits || []).map((c) => [c.id, c.persona, s(c.descrizione), c.importo, c.riscosso, s(c.scadenza), s(c.note), s(c.movimentoId)]),
+    headers: ["ID", "Persona", "Descrizione", "Importo", "Riscosso", "Scadenza", "Note", "MovimentoID", "Email", "ContoRimborso"],
+    pack: (st) => (st.credits || []).map((c) => [c.id, c.persona, s(c.descrizione), c.importo, c.riscosso, s(c.scadenza), s(c.note), s(c.movimentoId), s(c.email), s(c.contoRimborso)]),
     unpack: (rows) => rows.filter((r) => s(r[0])).map((r) => ({
       id: s(r[0]), persona: s(r[1]), descrizione: s(r[2]), importo: n(r[3]),
       riscosso: n(r[4]), scadenza: s(r[5]).slice(0, 10), note: s(r[6]), movimentoId: s(r[7]) || null,
+      email: s(r[8]), contoRimborso: s(r[9]) || null,
     })),
   },
   groups: {

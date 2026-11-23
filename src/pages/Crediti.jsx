@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowDownRight, CircleCheck, Plus, Trash2, UserRound } from "lucide-react";
+import { ArrowDownRight, CircleCheck, Mail, Plus, Trash2, UserRound } from "lucide-react";
 import { BtnGhost, BtnPrimary } from "../components/Buttons";
 import { Card } from "../components/Card";
 import { Input, Label, Select } from "../components/Forms";
@@ -135,6 +135,19 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
         {credits.map((credit, index) => {
           const remaining = Math.max(0, credit.importo - credit.riscosso);
           const paid = remaining === 0;
+          const reimbursementAccount = data.accounts.find((account) => account.id === credit.contoRimborso) || data.accounts.find((account) => account.iban?.trim());
+          const canSendReminder = Boolean(credit.email?.trim() && reimbursementAccount?.iban?.trim() && remaining > 0);
+          const emailSubject = `Promemoria rimborso${credit.descrizione ? ` · ${credit.descrizione}` : ""}`;
+          const emailBody = [
+            `Ciao ${credit.persona},`,
+            "",
+            `ti scrivo per ricordarti l'importo ancora da rimborsare${credit.descrizione ? ` per ${credit.descrizione}` : ""}: ${eur(remaining)}.`,
+            "",
+            `Puoi effettuare il bonifico a questo IBAN: ${reimbursementAccount?.iban || ""}`,
+            "",
+            "Grazie!",
+          ].join("\n");
+          const mailto = `mailto:${encodeURIComponent(credit.email || "")}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
           return (
             <Card key={credit.id} className="p-5 relative overflow-hidden" delay={60 + index * 50}>
               <div className="flex items-start justify-between gap-3">
@@ -162,6 +175,7 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
                   Movimento · {data.transactions.find((transaction) => transaction.id === credit.movimentoId)?.note || "Spesa collegata"}
                 </p>
               )}
+              {credit.email && <p className="text-xs text-slate-500 mt-2 truncate">{credit.email}</p>}
               <div className="flex flex-wrap gap-2 mt-4">
                 {(!paid || credit.movimentoId) && (!credit.movimentoId || data.transactions.some((transaction) => transaction.id === credit.movimentoId && transaction.tipo === "spesa")) && (
                   <BtnPrimary onClick={() => setCollecting(credit)} className="px-3! py-1.5! text-xs!">
@@ -172,6 +186,13 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
                   <span className="text-xs text-rose-300 px-2 py-2">Movimento non disponibile</span>
                 )}
                 {paid && <span className="text-xs text-emerald-300 px-2 py-2"><CircleCheck className="w-3.5 h-3.5 inline mr-1" />Credito saldato</span>}
+                {canSendReminder ? (
+                  <a href={mailto} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-200 text-xs hover:bg-white/10 hover:border-white/20 transition-all">
+                    <Mail className="w-3.5 h-3.5 inline mr-1" />Prepara email
+                  </a>
+                ) : credit.email && !paid ? (
+                  <span className="text-[11px] text-slate-500 py-2">Aggiungi un IBAN ai conti per preparare l’email</span>
+                ) : null}
                 <BtnGhost onClick={() => setEditing(credit)} className="px-3! py-1.5! text-xs!">Modifica</BtnGhost>
                 <button onClick={() => deleteCredit(credit)} aria-label={`Elimina credito di ${credit.persona}`} className="ml-auto text-slate-600 hover:text-rose-300 p-1">
                   <Trash2 className="w-4 h-4" />
@@ -193,6 +214,7 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
           key={editing.id || "new"}
           entry={editing}
           expenses={expenses}
+          accounts={data.accounts}
           onClose={() => setEditing(null)}
           onSave={(credit) => {
             const previousCredit = data.credits.find((current) => current.id === credit.id);
@@ -238,7 +260,7 @@ export function Crediti({ data, update, notify, setConfirmDlg }) {
   );
 }
 
-function CreditModal({ entry, expenses, onClose, onSave }) {
+function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
   const [form, setForm] = useState(() => ({
     persona: entry?.persona || "",
     descrizione: entry?.descrizione || "",
@@ -247,6 +269,8 @@ function CreditModal({ entry, expenses, onClose, onSave }) {
     scadenza: entry?.scadenza || "",
     note: entry?.note || "",
     movimentoId: entry?.movimentoId || "",
+    email: entry?.email || "",
+    contoRimborso: entry?.contoRimborso || accounts.find((account) => account.iban?.trim())?.id || "",
   }));
   if (!entry) return null;
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -263,16 +287,29 @@ function CreditModal({ entry, expenses, onClose, onSave }) {
       riscosso: Number(form.riscosso) || 0,
       note: form.note.trim(),
       movimentoId: form.movimentoId || null,
+      email: form.email.trim(),
+      contoRimborso: form.contoRimborso || null,
     });
   };
   return (
     <Modal open onClose={onClose} title={entry.id ? "Modifica credito" : "Nuovo credito"}>
       <form onSubmit={save} className="space-y-3">
         <div><Label>Persona</Label><Input required autoFocus value={form.persona} onChange={(event) => set("persona", event.target.value)} placeholder="Es. Marco" /></div>
+        <div><Label>Email (facoltativa)</Label><Input type="email" autoComplete="email" value={form.email} onChange={(event) => set("email", event.target.value)} placeholder="nome@esempio.it" /></div>
         <div><Label>Motivo</Label><Input value={form.descrizione} onChange={(event) => set("descrizione", event.target.value)} placeholder="Es. Cena, viaggio, prestito…" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Importo totale €</Label><Input required type="number" min="0.01" step="0.01" value={form.importo} onChange={(event) => set("importo", event.target.value)} /></div>
           <div><Label>Già ricevuto €</Label><Input type="number" min="0" step="0.01" value={form.riscosso} disabled={!!form.movimentoId} onChange={(event) => set("riscosso", event.target.value)} /></div>
+        </div>
+        <div>
+          <Label>Conto per il rimborso</Label>
+          <Select value={form.contoRimborso} onChange={(event) => set("contoRimborso", event.target.value)}>
+            <option value="">Seleziona un conto</option>
+            {accounts.filter((account) => account.iban?.trim()).map((account) => (
+              <option key={account.id} value={account.id}>{account.nome} · {account.iban}</option>
+            ))}
+          </Select>
+          {!accounts.some((account) => account.iban?.trim()) && <p className="text-[11px] text-slate-500 mt-1">Inserisci prima l’IBAN nelle impostazioni di un conto per includerlo nell’email.</p>}
         </div>
         <div>
           <Label>Collega a una spesa (facoltativo)</Label>

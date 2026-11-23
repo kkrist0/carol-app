@@ -49,6 +49,7 @@ export function Conti({ data, balances, update, onTransfer, notify, setConfirmDl
               </div>
               <CountEur value={balances[a.id] || 0} cls="font-display text-2xl mt-3 block text-white tabular-nums" />
               <p className="text-[11px] text-slate-600 mt-0.5">Saldo iniziale {eur(a.saldoIniziale)}</p>
+              {a.iban && <p className="text-[11px] text-slate-500 mt-1 truncate">IBAN · {a.iban}</p>}
             </div>
             <div className="absolute bottom-3 right-3 flex gap-2">
               <button onClick={(e) => { e.stopPropagation(); setAccModal(a); }} className="text-xs text-slate-500 hover:text-white transition-colors">Modifica</button>
@@ -85,7 +86,8 @@ export function AccountModal({ open, acc, onClose, update, notify, accountTypes 
           tipo: acc?.tipo || types[0].tipo, 
           icona: acc?.icona || iconForType(acc?.tipo || types[0].tipo), 
           colore: acc?.colore || "#8B9DF9", 
-          saldoIniziale: acc?.saldoIniziale ?? "" 
+          saldoIniziale: acc?.saldoIniziale ?? "",
+          iban: acc?.iban || "",
         });
       }, 0);
       return () => clearTimeout(timer);
@@ -101,9 +103,9 @@ export function AccountModal({ open, acc, onClose, update, notify, accountTypes 
     update((d) => {
       if (isEdit) {
         const a = d.accounts.find((x) => x.id === acc.id);
-        Object.assign(a, { nome: f.nome.trim(), tipo: f.tipo, icona: f.icona, colore: f.colore, saldoIniziale: Number(f.saldoIniziale) || 0 });
+        Object.assign(a, { nome: f.nome.trim(), tipo: f.tipo, icona: f.icona, colore: f.colore, saldoIniziale: Number(f.saldoIniziale) || 0, iban: f.iban.trim() });
       } else {
-        d.accounts.push({ id: uid(), nome: f.nome.trim(), tipo: f.tipo, icona: f.icona, colore: f.colore, saldoIniziale: Number(f.saldoIniziale) || 0 }); // Assicurati di importare uid()
+        d.accounts.push({ id: uid(), nome: f.nome.trim(), tipo: f.tipo, icona: f.icona, colore: f.colore, saldoIniziale: Number(f.saldoIniziale) || 0, iban: f.iban.trim() });
       }
       return d;
     });
@@ -119,6 +121,7 @@ export function AccountModal({ open, acc, onClose, update, notify, accountTypes 
           <div><Label>Tipo</Label><Select value={f.tipo} onChange={(e) => { set("tipo", e.target.value); if (!isEdit) set("icona", iconForType(e.target.value)); }}>{types.map((t) => <option key={t.tipo}>{t.tipo}</option>)}</Select></div>
           <div><Label>Saldo iniziale €</Label><Input type="number" inputMode="decimal" step="0.01" value={f.saldoIniziale} onChange={(e) => set("saldoIniziale", e.target.value)} placeholder="0,00" /></div>
         </div>
+        <div><Label>IBAN (facoltativo)</Label><Input value={f.iban} onChange={(e) => set("iban", e.target.value.toUpperCase())} placeholder="IT00 0000 0000 0000 0000 0000 000" autoComplete="off" /></div>
         <div><Label>Icona</Label>
           <div className="grid grid-cols-7 sm:grid-cols-9 gap-1.5">
             {ICONS.map((e) => (
