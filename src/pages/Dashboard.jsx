@@ -28,13 +28,13 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
     [data.recurringPayments, selMonth]
   );
 
-  /* La Dashboard può mostrare una qualsiasi combinazione dei tre blocchi
-     patrimoniali. I valori vengono letti dalle sezioni Investimenti e Stipendio/TFR. */
+  /* La Dashboard può mostrare qualsiasi combinazione delle componenti patrimoniali. */
   const savedToggles = data.settings?.patrimonioToggles || {};
   const [patrimonioToggles, setPatrimonioToggles] = useState({
     liquidi: savedToggles.liquidi ?? true,
     investimenti: savedToggles.investimenti ?? true,
     tfr: savedToggles.tfr ?? false,
+    crediti: savedToggles.crediti ?? false,
   });
 
   useEffect(() => {
@@ -46,11 +46,13 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
       liquidi: savedToggles.liquidi ?? true,
       investimenti: savedToggles.investimenti ?? true,
       tfr: savedToggles.tfr ?? false,
+      crediti: savedToggles.crediti ?? false,
     };
     if (
       next.liquidi !== patrimonioToggles.liquidi ||
       next.investimenti !== patrimonioToggles.investimenti ||
-      next.tfr !== patrimonioToggles.tfr
+      next.tfr !== patrimonioToggles.tfr ||
+      next.crediti !== patrimonioToggles.crediti
     ) {
       const timer = setTimeout(() => setPatrimonioToggles(next), 0);
       return () => clearTimeout(timer);
@@ -59,9 +61,11 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
     savedToggles.liquidi, 
     savedToggles.investimenti, 
     savedToggles.tfr, 
+    savedToggles.crediti,
     patrimonioToggles.liquidi, 
     patrimonioToggles.investimenti, 
-    patrimonioToggles.tfr
+    patrimonioToggles.tfr,
+    patrimonioToggles.crediti
   ]);
 
   const pf = usePortfolio(data.assets || [], data.trades || [], data.quotes || {}, data.portfolioSnapshots || []);
@@ -138,6 +142,23 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
     return valueAtOrBefore(carrieraStats.tfrSerie, "mk", "totale", mk);
   }, [carrieraStats, valueAtOrBefore]);
 
+  const creditMovementDates = useMemo(
+    () => new Map((data.transactions || [])
+      .filter((transaction) => transaction.tipo === "spesa")
+      .map((transaction) => [transaction.id, transaction.data])),
+    [data.transactions]
+  );
+  const today = todayISO();
+  const creditsAtDate = useCallback((date) => (data.credits || []).reduce((sum, credit) => {
+    const remaining = Math.max(0, credit.importo - credit.riscosso);
+    if (!remaining) return sum;
+    if (credit.movimentoId) {
+      const movementDate = creditMovementDates.get(credit.movimentoId);
+      return movementDate && movementDate <= date ? sum + remaining : sum;
+    }
+    return date === today ? sum + remaining : sum;
+  }, 0), [data.credits, creditMovementDates, today]);
+
   const interpolateMonthly = useCallback((iso, getValueFn) => {
     const mk = monthKey(iso);
     const prevMk = addMonthsMk(mk, -1);
@@ -167,12 +188,14 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
     liquidi: patrimonio,
     investimenti: investimentiAt(selMonth),
     tfr: tfrAt(selMonth),
-  }), [patrimonio, selMonth, investimentiAt, tfrAt]);
+    crediti: creditsAtDate(selMonth === monthKey(today) ? today : `${selMonth}-31`),
+  }), [patrimonio, selMonth, investimentiAt, tfrAt, creditsAtDate, today]);
 
   const patrimonioVisualizzato = useMemo(() => (
     (patrimonioToggles.liquidi ? componentValues.liquidi : 0) +
     (patrimonioToggles.investimenti ? componentValues.investimenti : 0) +
-    (patrimonioToggles.tfr ? componentValues.tfr : 0)
+    (patrimonioToggles.tfr ? componentValues.tfr : 0) +
+    (patrimonioToggles.crediti ? componentValues.crediti : 0)
   ), [patrimonioToggles, componentValues]);
 
   const togglePatrimonio = (key) => {
@@ -191,16 +214,18 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
     // Invece del gradino secco, usiamo la nostra nuova interpolazione!
     const investimenti = interpolateMonthly(point.iso, investimentiAt);
     const tfr = interpolateMonthly(point.iso, tfrAt);
+    const crediti = creditsAtDate(point.iso);
     
     return {
       ...point,
       valore: Math.round(
         (patrimonioToggles.liquidi ? liquidi : 0) +
         (patrimonioToggles.investimenti ? investimenti : 0) +
-        (patrimonioToggles.tfr ? tfr : 0)
+        (patrimonioToggles.tfr ? tfr : 0) +
+        (patrimonioToggles.crediti ? crediti : 0)
       ),
     };
-  }), [series, patrimonioToggles, investimentiAt, tfrAt, interpolateMonthly]);
+  }), [series, patrimonioToggles, investimentiAt, tfrAt, creditsAtDate, interpolateMonthly]);
 
   const deltaPatrimonio = useMemo(() => {
     if (seriePatrimonio.length < 2) return 0;
@@ -209,7 +234,7 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
     return last - first;
   }, [seriePatrimonio]);
 
-  const totalPatrimonioComponents = (componentValues.liquidi || 0) + (componentValues.investimenti || 0) + (componentValues.tfr || 0);
+  const totalPatrimonioComponents = (componentValues.liquidi || 0) + (componentValues.investimenti || 0) + (componentValues.tfr || 0) + (componentValues.crediti || 0);
 
   const patrimonioComponents = [
     {
@@ -232,6 +257,13 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
       val: componentValues.tfr || 0,
       color: "#FBBF24",
       icon: "🛡️",
+    },
+    {
+      key: "crediti",
+      label: "Crediti",
+      val: componentValues.crediti || 0,
+      color: "#34D399",
+      icon: "🪙",
     },
   ];
 
@@ -371,13 +403,13 @@ export function Dashboard({ patrimonio, isCurrentMonth, selMonth, setSelMonth, c
             </div>
             {/* Grafico ad Area oppure Messaggio di Selezione */}
             
-            {!(patrimonioToggles.liquidi || patrimonioToggles.investimenti || patrimonioToggles.tfr) ? (
+            {!(patrimonioToggles.liquidi || patrimonioToggles.investimenti || patrimonioToggles.tfr || patrimonioToggles.crediti) ? (
               <div className="h-60 sm:h-72 md:h-80 w-full flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-dashed border-white/10 bg-white/2">
                 <p className="text-sm font-display text-white mb-1">
                   No data to display
                 </p>
                 <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-                  Select one or more asset types on the left (Cash - Portfolio - Retirement Accounts) to display the chart.
+                  Select one or more asset types on the left (Cash - Portfolio - Retirement Accounts - Credits) to display the chart.
                 </p>
               </div>
             ) : (() => {
