@@ -8,11 +8,28 @@ import { eur, fmtDate, todayISO, uid } from "../utils/helpers";
 
 const amountLabel = (amount) => Number(amount).toLocaleString("it-IT", { maximumFractionDigits: 2 });
 
-function splitAmount(total, count) {
+function calculateAmountSplit(total, people) {
   const totalCents = Math.round((Number(total) || 0) * 100);
-  const baseCents = Math.floor(totalCents / count);
-  const extraCents = totalCents % count;
-  return Array.from({ length: count }, (_, index) => (baseCents + (index < extraCents ? 1 : 0)) / 100);
+  const amounts = people.map((person) => person.manualAmount ? Math.round((Number(person.importo) || 0) * 100) : 0);
+  const automaticIndexes = people.reduce((indexes, person, index) => {
+    if (!person.manualAmount) indexes.push(index);
+    return indexes;
+  }, []);
+  const manualTotal = amounts.reduce((sum, amount) => sum + amount, 0);
+  const remainingCents = totalCents - manualTotal;
+  if (automaticIndexes.length && remainingCents >= 0) {
+    const baseCents = Math.floor(remainingCents / automaticIndexes.length);
+    const extraCents = remainingCents % automaticIndexes.length;
+    automaticIndexes.forEach((index, order) => {
+      amounts[index] = baseCents + (order < extraCents ? 1 : 0);
+    });
+  }
+  return {
+    amounts: amounts.map((amount) => amount / 100),
+    automaticCount: automaticIndexes.length,
+    unallocatedCents: totalCents - amounts.reduce((sum, amount) => sum + amount, 0),
+    remainingCents,
+  };
 }
 
 function refreshCreditTag(data, movementId) {
@@ -382,10 +399,44 @@ function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
   const [totalAmount, setTotalAmount] = useState("");
   if (!entry) return null;
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-  const distributedAmounts = splitAmount(totalAmount, people.length);
+  const split = calculateAmountSplit(totalAmount, people);
+  const setAmountModeAndValues = (mode) => {
+    if (mode === "equal") {
+      const currentTotal = people.reduce((sum, person) => sum + Math.max(0, Math.round((Number(person.importo) || 0) * 100)), 0);
+      setTotalAmount(currentTotal ? (currentTotal / 100).toFixed(2) : "");
+      setPeople((current) => current.map((person) => ({ ...person, manualAmount: false })));
+    } else {
+      setPeople((current) => current.map((person, index) => ({
+        ...person,
+        importo: split.amounts[index].toFixed(2),
+        manualAmount: false,
+      })));
+    }
+    setAmountMode(mode);
+  };
   const setPerson = (index, key, value) => setPeople((current) => current.map((person, personIndex) => (
-    personIndex === index ? { ...person, [key]: value } : person
+    personIndex === index
+      ? { ...person, [key]: value, ...(key === "importo" && amountMode === "equal" ? { manualAmount: true } : {}) }
+      : person
   )));
+  const maxPersonAmount = (index) => {
+    const totalCents = Math.round((Number(totalAmount) || 0) * 100);
+    const otherManualCents = people.reduce((sum, person, personIndex) => (
+      personIndex !== index && person.manualAmount
+        ? sum + Math.round((Number(person.importo) || 0) * 100)
+        : sum
+    ), 0);
+    const otherAutomaticCount = people.filter((person, personIndex) => personIndex !== index && !person.manualAmount).length;
+    return Math.max(1, totalCents - otherManualCents - otherAutomaticCount) / 100;
+  };
+  const resetPersonAmount = (index) => setPeople((current) => current.map((person, personIndex) => (
+    personIndex === index ? { ...person, manualAmount: false } : person
+  )));
+  const splitIsInvalid = !entry.id && amountMode === "equal" && (
+    split.unallocatedCents !== 0 ||
+    split.amounts.some((amount) => amount < 0.01) ||
+    (split.automaticCount > 0 && split.remainingCents < split.automaticCount)
+  );
   const save = (event) => {
     event.preventDefault();
     const credits = people.map((person, index) => ({
@@ -393,7 +444,7 @@ function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
       ...form,
       persona: person.persona.trim(),
       descrizione: form.descrizione.trim(),
-      importo: !entry.id && amountMode === "equal" ? distributedAmounts[index] : Number(person.importo),
+      importo: !entry.id && amountMode === "equal" ? split.amounts[index] : Number(person.importo),
       riscosso: entry?.riscosso ?? 0,
       note: form.note.trim(),
       movimentoId: form.movimentoId || null,
@@ -401,6 +452,7 @@ function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
       contoRimborso: form.contoRimborso || null,
     }));
     if (!credits.every((credit) => credit.persona && credit.importo > 0)) return;
+    if (splitIsInvalid) return;
     onSave(credits);
   };
   return (
@@ -411,10 +463,10 @@ function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
             <Label>Persone e importi</Label>
             {!entry.id && (
               <div className="flex gap-2 rounded-xl bg-white/[0.03] p-1">
-                <button type="button" aria-pressed={amountMode === "individual"} onClick={() => setAmountMode("individual")} className={`flex-1 rounded-lg px-3 py-2 text-xs transition-colors ${amountMode === "individual" ? "bg-indigo-400/20 text-indigo-100" : "text-slate-400 hover:text-white"}`}>
+                <button type="button" aria-pressed={amountMode === "individual"} onClick={() => setAmountModeAndValues("individual")} className={`flex-1 rounded-lg px-3 py-2 text-xs transition-colors ${amountMode === "individual" ? "bg-indigo-400/20 text-indigo-100" : "text-slate-400 hover:text-white"}`}>
                   Importo per persona
                 </button>
-                <button type="button" aria-pressed={amountMode === "equal"} onClick={() => setAmountMode("equal")} className={`flex-1 rounded-lg px-3 py-2 text-xs transition-colors ${amountMode === "equal" ? "bg-indigo-400/20 text-indigo-100" : "text-slate-400 hover:text-white"}`}>
+                <button type="button" aria-pressed={amountMode === "equal"} onClick={() => setAmountModeAndValues("equal")} className={`flex-1 rounded-lg px-3 py-2 text-xs transition-colors ${amountMode === "equal" ? "bg-indigo-400/20 text-indigo-100" : "text-slate-400 hover:text-white"}`}>
                   Dividi il totale
                 </button>
               </div>
@@ -423,7 +475,7 @@ function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
               <div className="mt-3">
                 <Label>Importo totale €</Label>
                 <Input required type="number" min={(people.length / 100).toFixed(2)} step="0.01" value={totalAmount} onChange={(event) => setTotalAmount(event.target.value)} />
-                <p className="text-[11px] text-slate-500 mt-1">Le quote sono uguali al centesimo; gli eventuali centesimi residui vengono distribuiti per mantenere il totale esatto.</p>
+                <p className="text-[11px] text-slate-500 mt-1">Le quote automatiche si dividono equamente il residuo; gli eventuali centesimi residui vengono distribuiti per mantenere il totale esatto.</p>
               </div>
             )}
             {people.map((person, index) => (
@@ -434,10 +486,23 @@ function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
                     <div><Label>Importo €</Label><Input required type="number" min="0.01" step="0.01" value={person.importo} onChange={(event) => setPerson(index, "importo", event.target.value)} /></div>
                   ) : (
                     <div>
-                      <Label>Quota €</Label>
-                      <div className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-amber-200 tabular-nums">
-                        {totalAmount ? eur(distributedAmounts[index]) : "Inserisci il totale"}
+                      <div className="flex items-center justify-between">
+                        <Label>Quota €</Label>
+                        {person.manualAmount && (
+                          <button type="button" onClick={() => resetPersonAmount(index)} className="mb-1 text-[11px] text-indigo-300 hover:text-indigo-200">
+                            Reset
+                          </button>
+                        )}
                       </div>
+                      <Input
+                        required
+                        type="number"
+                        min="0.01"
+                        max={maxPersonAmount(index).toFixed(2)}
+                        step="0.01"
+                        value={person.manualAmount ? person.importo : split.amounts[index].toFixed(2)}
+                        onChange={(event) => setPerson(index, "importo", event.target.value)}
+                      />
                     </div>
                   )}
                 </div>
@@ -456,6 +521,15 @@ function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
             <BtnGhost type="button" onClick={() => setPeople((current) => [...current, { persona: "", importo: "", email: "" }])} className="w-full">
               <Plus className="w-4 h-4 inline mr-1" />Aggiungi persona
             </BtnGhost>
+          )}
+          {!entry.id && amountMode === "equal" && splitIsInvalid && (
+            <p className="text-[11px] text-rose-300">
+              {split.unallocatedCents < 0
+                ? `Gli importi impostati superano il totale di ${eur(-split.unallocatedCents / 100)}.`
+                : split.automaticCount > 0
+                  ? "Il residuo non basta per assegnare almeno 0,01 € a ogni quota automatica."
+                  : `Restano ${eur(split.unallocatedCents / 100)} da assegnare. Ripristina una quota automatica o modifica gli importi.`}
+            </p>
           )}
           {!entry.id && <p className="text-[11px] text-slate-500">Motivo, scadenza, note e spesa collegata saranno condivisi; l’email è specifica per ogni persona.</p>}
         </div>
@@ -492,7 +566,7 @@ function CreditModal({ entry, expenses, accounts, onClose, onSave }) {
         <div><Label>Note (facoltative)</Label><Input value={form.note} onChange={(event) => set("note", event.target.value)} /></div>
         <div className="flex justify-end gap-2 pt-2">
           <BtnGhost type="button" onClick={onClose}>Annulla</BtnGhost>
-          <BtnPrimary type="submit">Salva</BtnPrimary>
+          <BtnPrimary type="submit" disabled={splitIsInvalid} className={splitIsInvalid ? "disabled:opacity-40 disabled:cursor-not-allowed" : ""}>Salva</BtnPrimary>
         </div>
       </form>
     </Modal>
