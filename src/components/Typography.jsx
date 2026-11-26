@@ -35,12 +35,20 @@ export function StyleTag() {
       @media (min-width: 640px) { @keyframes sheetIn { from { opacity: 0; transform: scale(.96) translateY(8px); } to { opacity: 1; transform: none; } } }
       /* i pulsanti restano sempre a portata, anche a modale scorrevole */
       @media (max-width: 639px) {
+        .modal-sheet { background: rgba(16,19,28,.98); border-color: rgba(255,255,255,.12); box-shadow: 0 -12px 40px rgba(0,0,0,.32); }
+        .modal-sheet :is(input:not([type]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="color"]):not([type="range"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), select, textarea) {
+          min-height: 44px;
+          font-size: 16px;
+          scroll-margin-block: 1rem;
+        }
+        .modal-sheet .modal-close-button { min-width: 44px; min-height: 44px; }
         .modal-sheet .modal-actions { flex-direction: column-reverse; align-items: stretch; }
-        .modal-sheet .modal-actions > button { width: 100%; padding-top: .7rem; padding-bottom: .7rem; }
+        .modal-sheet .modal-actions > button { width: 100%; min-height: 48px; padding-top: .7rem; padding-bottom: .7rem; }
         .modal-sheet .modal-actions > .flex-1 { display: none; }
       }
       .modal-sheet .modal-actions { position: sticky; bottom: -1rem; z-index: 2; padding: .75rem 0 1rem;
         margin-bottom: -1rem; background: linear-gradient(to top, rgba(16,19,28,.98) 62%, rgba(16,19,28,0)); }
+      .modal-sheet-content { padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
       /* spazio sotto: la barra di navigazione mobile non deve coprire i contenuti */
       .main-pad { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7.5rem); }
       @media (min-width: 768px) { .main-pad { padding-bottom: 2rem; } .fab-bottom { bottom: 2rem !important; } }

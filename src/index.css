@@ -2,6 +2,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+}
+
 .font-display { font-family: 'Sora', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.02em; }
 .font-body { font-family: 'Inter', system-ui, sans-serif; }
 
@@ -22,13 +26,21 @@
 }
 
 @media (max-width: 639px) {
+  .modal-sheet { background: rgba(16,19,28,.98); border-color: rgba(255,255,255,.12); box-shadow: 0 -12px 40px rgba(0,0,0,.32); }
+  .modal-sheet :is(input:not([type]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="color"]):not([type="range"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]), select, textarea) {
+    min-height: 44px;
+    font-size: 16px;
+    scroll-margin-block: 1rem;
+  }
+  .modal-sheet .modal-close-button { min-width: 44px; min-height: 44px; }
   .modal-sheet .modal-actions { flex-direction: column-reverse; align-items: stretch; }
-  .modal-sheet .modal-actions > button { width: 100%; padding-top: .7rem; padding-bottom: .7rem; }
+  .modal-sheet .modal-actions > button { width: 100%; min-height: 48px; padding-top: .7rem; padding-bottom: .7rem; }
   .modal-sheet .modal-actions > .flex-1 { display: none; }
 }
 
 .modal-sheet .modal-actions { position: sticky; bottom: -1rem; z-index: 2; padding: .75rem 0 1rem;
   margin-bottom: -1rem; background: linear-gradient(to top, rgba(16,19,28,.98) 62%, rgba(16,19,28,0)); }
+.modal-sheet-content { padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
 
 .main-pad { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7.5rem); }
 
