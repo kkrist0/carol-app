@@ -268,7 +268,7 @@ export function Report({ txs, catById, monthStats, data, update }) {
           <h2 className="font-display text-white mb-3">Intensità di spesa · {labelMk(pMk).toLowerCase()}</h2>
           <div className="grid gap-1.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(24px, 1fr))" }}>
             {heat.arr.map((x) => (
-              <div key={x.d} title={`Giorno ${x.d}: ${eur(x.v)}`} className="aspect-square rounded-md transition-transform hover:scale-110 grid place-items-center text-[9px] text-slate-500" style={{ background: x.v === 0 ? "rgba(255,255,255,.04)" : `rgba(139,157,249,${0.15 + 0.75 * (x.v / heat.max)})` }}>{x.d}</div>
+              <div key={x.d} title={`Giorno ${x.d}: ${eur(x.v)}`} className={`aspect-square rounded-md transition-transform hover:scale-110 grid place-items-center text-[9px] text-slate-500 ${x.v === 0 ? "heatmap-empty-cell" : ""}`} style={{ background: x.v === 0 ? "rgba(255,255,255,.04)" : `rgba(139,157,249,${0.15 + 0.75 * (x.v / heat.max)})` }}>{x.d}</div>
             ))}
           </div>
         </Card>

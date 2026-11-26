@@ -65,8 +65,9 @@ export const TxRow = memo(function TxRow({ t, c, contoNome, contoColore, contoDe
           </span>
           {!isTr && (
             <span
-              className="min-w-0 max-w-full truncate shrink rounded-full px-3 py-1 text-[10px] font-semibold"
+              className="transaction-category min-w-0 max-w-full truncate shrink rounded-full px-3 py-1 text-[10px] font-semibold"
               style={{
+                "--category-color": categoryColor,
                 background: `color-mix(in srgb, ${categoryColor} 65%, #1e293b)`,
                 color: `color-mix(in srgb, ${categoryColor} 30%, #F1F5F9)`,
               }}

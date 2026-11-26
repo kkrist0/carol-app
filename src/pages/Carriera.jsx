@@ -1447,7 +1447,7 @@ export function VisoreCedolino({ valore, dati, onClose }) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-118 flex flex-col"
+      className="theme-dark-surface fixed inset-0 z-118 flex flex-col"
       style={{ background: "rgba(6,8,13,.97)", animation: "fadeIn .2s both" }}
     >
       <div

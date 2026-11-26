@@ -6,8 +6,6 @@ import {
   useCallback,
 } from "react";
 
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-
 import {
   eur,
   todayISO,
@@ -65,7 +63,7 @@ import { storage } from "./services/storage";
 import { Spinner } from "./components/Spinner";
 import { StyleTag } from "./components/Typography";
 import { marketData } from "./services/markets";
-import { Archive, BriefcaseBusiness, CalendarClock, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, BriefcaseBusiness, CalendarClock, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Menu as MenuIcon, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards, X } from "lucide-react";
 
 /* ============================================================
    APP PRINCIPALE
@@ -82,7 +80,10 @@ export default function App() {
   const [palette, setPalette] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reorderMode, setReorderMode] = useState(false);
+  const [mobileReorderMode, setMobileReorderMode] = useState(false);
   const [draggedNavId, setDraggedNavId] = useState(null);
+  const menuTriggerRef = useRef(null);
+  const menuCloseRef = useRef(null);
   const [syncCfg, setSyncCfg] = useState(DEFAULT_SYNC_CFG);
   const [syncState, setSyncState] = useState("idle"); // idle | pulling | pushing | ok | error
   const [syncError, setSyncError] = useState(null);
@@ -989,6 +990,7 @@ useEffect(() => {
       }
       if (e.key === "Escape") {
         setPalette(false);
+        setMenuOpen(false);
       }
     };
     window.addEventListener("keydown", h);
@@ -1041,16 +1043,19 @@ useEffect(() => {
 
   const mainRef = useRef(null);
 
-  const handleDragEnd = (result) => {
-  if (!result.destination) return;
-  
-  const sourceId = result.draggableId;
-  const targetId = orderedNav[result.destination.index]?.id;
-  
-  if (sourceId && targetId && sourceId !== targetId) {
-    moveNavItem(sourceId, targetId);
-  }
-};
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const trigger = menuTriggerRef.current;
+    document.body.style.overflow = "hidden";
+    menuCloseRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      trigger?.focus();
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     mainRef.current?.scrollTo({
@@ -1438,181 +1443,193 @@ useEffect(() => {
         </main>
       </div>
 
-      {/* Drawer Mobile con Drag and Drop nativo per Touch */}
+      {/* Menu mobile in formato bottom sheet */}
       {menuOpen && (
-        <div className="md:hidden fixed inset-0 z-85">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        <div className="md:hidden fixed inset-0 z-[85] flex items-end justify-center">
+          <button
+            type="button"
+            aria-label="Chiudi menu"
+            className="absolute inset-0 w-full border-0 bg-black/60 p-0 backdrop-blur-sm"
             style={{ animation: "fadeIn .2s both" }}
             onClick={() => setMenuOpen(false)}
           />
-          <aside
-            className="absolute inset-y-0 left-0 w-68 max-w-[85vw] glass-strong border-r border-white/10 flex flex-col p-5 overflow-y-auto"
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-menu-title"
+            className="relative z-10 flex max-h-[88dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 glass-strong shadow-2xl"
             style={{
-              animation: "drawerIn .3s cubic-bezier(.22,1,.36,1) both",
-              paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)",
-              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 1.25rem)",
+              animation: "sheetIn .3s cubic-bezier(.22,1,.36,1) both",
+              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
             }}
           >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2.5">
-                <Logo size={32} />
-                <div>
-                  <span className="font-display text-lg text-white tracking-tight leading-none block">
+            <div className="shrink-0 px-4 pb-3 pt-3">
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" aria-hidden="true" />
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                     C.A.R.O.L
-                  </span>
+                  </p>
+                  <h2 id="mobile-menu-title" className="mt-0.5 text-xl font-semibold text-white">
+                    Navigazione
+                  </h2>
+                  <p className="mt-0.5 hidden truncate text-xs text-slate-400 min-[360px]:block">
+                    Sezione attuale: {orderedNav.find((n) => n.id === page)?.label || "Dashboard"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    aria-pressed={mobileReorderMode}
+                    onClick={() => setMobileReorderMode((value) => !value)}
+                    className={`min-h-11 rounded-xl border px-3 text-xs font-medium transition-colors ${
+                      mobileReorderMode
+                        ? "border-indigo-400/40 bg-indigo-500/15 text-indigo-200"
+                        : "border-white/10 bg-white/5 text-slate-300 active:bg-white/10"
+                    }`}
+                  >
+                    {mobileReorderMode ? "Fine" : "Riordina"}
+                  </button>
+                  <button
+                    ref={menuCloseRef}
+                    type="button"
+                    onClick={() => setMenuOpen(false)}
+                    aria-label="Chiudi menu"
+                    className="grid min-h-11 min-w-11 place-items-center rounded-xl bg-white/5 text-slate-300 transition-colors active:bg-white/10"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={() => setMenuOpen(false)}
-                aria-label="Chiudi"
-                className="w-9 h-9 rounded-full bg-white/5 text-slate-300 hover:bg-white/10 transition-all grid place-items-center"
-              >
-                ✕
-              </button>
             </div>
 
-            {/* Navigazione con Drag & Drop touch-friendly */}
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <Droppable droppableId="mobile-drawer-nav">
-                {(provided) => (
-                  <nav
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="flex flex-col gap-1"
-                  >
-                    {orderedNav.map((n, i) => (
-                      <Draggable
-                        key={n.id}
-                        draggableId={n.id}
-                        index={i}
-                        isDragDisabled={!reorderMode}
-                      >
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            onClick={() => {
-                              if (reorderMode) return;
-                              setPage(n.id);
-                              setMenuOpen(false);
-                            }}
-                            className={`relative flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all select-none ${
-                              page === n.id
-                                ? "bg-white/9 text-white"
-                                : "text-slate-400 active:bg-white/5"
-                            } ${
-                              snapshot.isDragging
-                                ? "bg-indigo-500/20 border border-indigo-400/40 shadow-xl"
-                                : ""
-                            }`}
-                            style={{
-                              ...provided.draggableProps.style,
-                              animation: snapshot.isDragging
-                                ? "none"
-                                : "fadeUp .35s both",
-                              animationDelay: `${40 + i * 30}ms`,
-                            }}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              {page === n.id && (
-                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-5 rounded-full bg-linear-to-b from-indigo-300 to-teal-300" />
-                              )}
-                              <span
-                                className={`text-base shrink-0 ${
-                                  page === n.id ? "opacity-100" : "opacity-60"
-                                }`}
-                              >
-                                {n.icon}
-                              </span>
-                              <span className="truncate">{n.label}</span>
-                            </div>
-
-                            {/* Maniglia di drag per mobile e PC */}
-                            {reorderMode && (
-                              <div
-                                {...provided.dragHandleProps}
-                                className="p-1 text-slate-400 hover:text-white touch-none cursor-grab active:cursor-grabbing text-sm"
-                              >
-                                ⋮⋮
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </nav>
-                )}
-              </Droppable>
-            </DragDropContext>
-
-            <button
-              onClick={() => setReorderMode((v) => !v)}
-              className="mt-3 px-2 py-1 rounded-full text-[8px] uppercase tracking-[0.28em] text-slate-500/70 hover:text-slate-300 hover:bg-white/5 transition-all self-center w-fit"
+            <nav
+              aria-label="Sezioni dell'app"
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4"
             >
-              {reorderMode ? "confirm" : "change order"}
-            </button>
+              <div className="grid grid-cols-1 gap-2.5 min-[360px]:grid-cols-2">
+                {orderedNav.map((n, i) => (
+                  <div key={n.id} className="min-w-0">
+                    {mobileReorderMode ? (
+                      <div className="flex min-h-[68px] items-center justify-between gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
+                        <div className="flex min-w-0 items-center gap-2.5 text-slate-200">
+                          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/5 text-slate-300">
+                            {n.icon}
+                          </span>
+                          <span className="truncate text-sm font-medium">{n.label}</span>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <button
+                            type="button"
+                            aria-label={`Sposta ${n.label} in alto`}
+                            disabled={i === 0}
+                            onClick={() => moveNavItem(n.id, orderedNav[i - 1]?.id)}
+                            className="grid min-h-11 min-w-11 place-items-center rounded-xl bg-white/5 text-slate-300 transition-colors active:bg-white/15 disabled:opacity-30"
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Sposta ${n.label} in basso`}
+                            disabled={i === orderedNav.length - 1}
+                            onClick={() => moveNavItem(n.id, orderedNav[i + 1]?.id)}
+                            className="grid min-h-11 min-w-11 place-items-center rounded-xl bg-white/5 text-slate-300 transition-colors active:bg-white/15 disabled:opacity-30"
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPage(n.id);
+                          setMenuOpen(false);
+                        }}
+                        aria-current={page === n.id ? "page" : undefined}
+                        className={`flex min-h-[68px] w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-colors active:scale-[0.98] ${
+                          page === n.id
+                            ? "border-indigo-400/40 bg-indigo-500/15 text-white"
+                            : "border-white/10 bg-white/5 text-slate-300 active:bg-white/10"
+                        }`}
+                      >
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/5 text-slate-200">
+                          {n.icon}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">{n.label}</span>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </nav>
 
-            <div className="mt-auto pt-5">
+            <div className="shrink-0 border-t border-white/10 px-4 pt-3">
               <button
+                type="button"
                 onClick={() => {
                   setMenuOpen(false);
                   setPalette(true);
                 }}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-400 active:bg-white/10 transition-all"
+                className="flex min-h-12 w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-medium text-slate-200 transition-colors active:bg-white/10"
               >
-                Cerca ovunque <span className="text-slate-600">⌕</span>
+                Cerca ovunque <span className="text-lg text-slate-400">⌕</span>
               </button>
               <div
-                className={`mt-3 flex items-center gap-1.5 text-[11px] ${
-                  saveState === "error" ? "text-rose-400" : "text-slate-500"
+                role="status"
+                className={`flex min-h-10 items-center gap-2 text-xs ${
+                  saveState === "error" ? "text-rose-400" : "text-slate-400"
                 }`}
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${
+                  className={`h-2 w-2 shrink-0 rounded-full ${
                     saveState === "saving"
-                      ? "bg-amber-400 animate-pulse"
+                      ? "animate-pulse bg-amber-400"
                       : saveState === "error"
-                      ? "bg-rose-400"
-                      : "bg-emerald-400"
+                        ? "bg-rose-400"
+                        : "bg-emerald-400"
                   }`}
                 />
                 {saveState === "saving"
                   ? "Salvataggio…"
                   : saveState === "error"
-                  ? "Errore di salvataggio"
-                  : "Salvato in locale"}
+                    ? "Errore di salvataggio"
+                    : "Salvato in locale"}
               </div>
               {repository.hasRemote && (
                 <button
-                  onClick={() => {
-                    pullNow();
-                    setMenuOpen(false);
-                  }}
-                  className="w-full mt-2 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] bg-white/5 border border-white/10 active:bg-white/10 transition-all"
+                  type="button"
+                  onClick={pullNow}
+                  disabled={syncState === "pulling" || syncState === "pushing"}
+                  className="mb-1 flex min-h-12 w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-slate-200 transition-colors active:bg-white/10 disabled:opacity-60"
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${
+                    className={`h-2 w-2 shrink-0 rounded-full ${
                       syncState === "error"
                         ? "bg-rose-400"
-                        : pendingPush
+                        : syncState === "pulling" || syncState === "pushing"
+                          ? "animate-pulse bg-amber-400"
+                          : pendingPush
                         ? "bg-amber-400"
                         : "bg-emerald-400"
                     }`}
                   />
-                  <span className="text-slate-400">
-                    {syncState === "error"
-                      ? "Sync non riuscita"
-                      : pendingPush
-                      ? "In attesa di invio"
-                      : "Sincronizzato"}
+                  <span>
+                    {syncState === "pulling"
+                      ? "Aggiornamento…"
+                      : syncState === "pushing"
+                        ? "Invio in corso…"
+                        : syncState === "error"
+                          ? "Riprova sincronizzazione"
+                          : pendingPush
+                            ? "Aggiorna dati · invio in attesa"
+                            : "Aggiorna dati"}
                   </span>
-                  <span className="ml-auto text-slate-600">⟳</span>
+                  <span className="ml-auto text-lg text-slate-400" aria-hidden="true">⟳</span>
                 </button>
               )}
             </div>
-          </aside>
+          </section>
         </div>
       )}
 
@@ -1644,10 +1661,11 @@ useEffect(() => {
             ))}
           <button
             onClick={() => setMenuOpen(true)}
-            aria-label="Menu"
-            className="flex-1 h-10 rounded-full grid place-items-center text-slate-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all"
+            ref={menuTriggerRef}
+            aria-label="Apri menu"
+            className="grid h-10 flex-1 place-items-center rounded-full text-slate-400 transition-all hover:bg-white/5 hover:text-white active:scale-90"
           >
-            <span className="w-5 h-5 flex items-center justify-center">☰</span>
+            <MenuIcon className="h-5 w-5" />
           </button>
         </nav>
 

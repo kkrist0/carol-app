@@ -611,7 +611,7 @@ function AssetDetail({ pos, onClose, onEdit, onTrade, onPrezzo, onDelete, onDelT
   return createPortal(
     <div className="fixed inset-0 z-75 overflow-y-auto" style={{ animation: "fadeIn .2s both" }}>
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative max-w-3xl mx-auto sm:my-8 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-white/10 min-h-full sm:min-h-0"
+      <div className="theme-surface relative max-w-3xl mx-auto sm:my-8 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-white/10 min-h-full sm:min-h-0"
         style={{ background: "rgba(12,15,23,.98)", animation: "popIn .32s cubic-bezier(.22,1,.36,1) both", paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="p-4 sm:p-6">
           <div className="flex items-start justify-between gap-3 mb-4">
@@ -950,7 +950,7 @@ function AssetModal({ open, asset, onClose, onSave }) {
             <Label>Cerca lo strumento</Label>
             <Input value={ricerca} onChange={(e) => setRicerca(e.target.value)} placeholder="Scrivi VWCE, SWDA, CSSPX, EIMI, un ISIN o un nome…" autoFocus />
             {risultati.length > 0 && (
-              <div className="absolute z-30 mt-1 w-full rounded-xl overflow-hidden border border-white/15 shadow-2xl max-h-60 overflow-y-auto" style={{ background: "rgba(14,17,26,.97)", backdropFilter: "blur(20px)", animation: "popIn .18s both" }}>
+              <div className="theme-popover absolute z-30 mt-1 w-full rounded-xl overflow-hidden border border-white/15 shadow-2xl max-h-60 overflow-y-auto" style={{ background: "rgba(14,17,26,.97)", backdropFilter: "blur(20px)", animation: "popIn .18s both" }}>
                 {risultati.map((e) => (
                   <button key={e.t + e.borsa} onClick={() => scegli(e)} className="w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-white/10 transition-colors border-b border-white/4 last:border-0">
                     <span className="text-[11px] font-semibold text-indigo-300 w-14 shrink-0 mt-0.5">{e.t}</span>

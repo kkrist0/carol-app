@@ -314,7 +314,7 @@ function Globe3D({ trips, wishlist = [], onSelectTrip, selectedTripId, height = 
   if (status === "error") return <WorldMap trips={trips} wishlist={wishlist} onSelectTrip={onSelectTrip} onSelectCountry={() => {}} selectedTripId={selectedTripId} height={height} />;
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#080B12]" style={{ height }}>
+    <div className="travel-map relative rounded-2xl overflow-hidden border border-white/10 bg-[#080B12]" style={{ height }}>
       <div ref={holder} className="absolute inset-0" />
 
       {status === "loading" && (
@@ -468,7 +468,7 @@ function WorldMap({ trips, wishlist = [], onSelectTrip, onSelectCountry, selecte
   const inv = 1 / view.k;
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-white/10" style={{ height }}>
+    <div className="travel-map relative rounded-2xl overflow-hidden border border-white/10" style={{ height }}>
       <svg ref={svgRef} viewBox={vb} preserveAspectRatio="xMidYMid slice" className="w-full h-full touch-none select-none cursor-grab active:cursor-grabbing"
         onWheel={onWheel} onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
         onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}>
@@ -1056,7 +1056,7 @@ function TripDetail({ trip, data, update, notify, setConfirmDlg, onClose, onEdit
   <div className="fixed inset-0 z-80 overflow-y-auto" style={{ animation: "fadeIn .2s both" }}>
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
     <div
-      className="relative max-w-3xl mx-auto sm:my-8 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-white/10 min-h-full sm:min-h-0"
+      className="theme-surface relative max-w-3xl mx-auto sm:my-8 rounded-none sm:rounded-3xl overflow-hidden border-0 sm:border border-white/10 min-h-full sm:min-h-0"
       style={{
         background: "rgba(12,15,23,.98)",
         animation: "popIn .32s cubic-bezier(.22,1,.36,1) both",
@@ -1065,7 +1065,7 @@ function TripDetail({ trip, data, update, notify, setConfirmDlg, onClose, onEdit
     >
       {/* hero - aggiunta safe area top dinamica per il mobile */}
       <div
-        className="h-48 sm:h-52 md:h-56 relative"
+        className="trip-hero h-48 sm:h-52 md:h-56 relative"
         style={{
           background: `linear-gradient(135deg, ${trip.colore}55, #0F1420)`,
           paddingTop: "env(safe-area-inset-top, 0px)",
@@ -1505,7 +1505,7 @@ function TripDetail({ trip, data, update, notify, setConfirmDlg, onClose, onEdit
     />
     {lightbox != null && (
       <div
-        className="fixed inset-0 z-115 bg-black/95 flex items-center justify-center"
+        className="theme-dark-surface fixed inset-0 z-115 bg-black/95 flex items-center justify-center"
         style={{ animation: "fadeIn .2s both" }}
         onClick={() => setLightbox(null)}
       >
@@ -1743,7 +1743,7 @@ function TripModal({ open, trip, onClose, onSave }) {
             {searching && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><Spinner /></span>}
           </div>
           {cityOpen && matches.length > 0 && (
-            <div className="absolute z-30 mt-1 w-full rounded-xl overflow-hidden border border-white/15 shadow-2xl max-h-64 overflow-y-auto" style={{ background: "rgba(14,17,26,.97)", backdropFilter: "blur(20px)", animation: "popIn .18s both" }}>
+            <div className="theme-popover absolute z-30 mt-1 w-full rounded-xl overflow-hidden border border-white/15 shadow-2xl max-h-64 overflow-y-auto" style={{ background: "rgba(14,17,26,.97)", backdropFilter: "blur(20px)", animation: "popIn .18s both" }}>
               {matches.map((p, i) => (
                 <button key={p.nome + p.lat + i} onClick={() => pickCity(p)} className="w-full flex items-start gap-2 px-3 py-2 text-sm text-left hover:bg-white/10 transition-colors border-b border-white/4 last:border-0">
                   <span className="mt-0.5">{countryFlag(p.paese)}</span>
@@ -2018,7 +2018,7 @@ useEffect(() => {
               <Label>Destinazione</Label>
               <Input value={cityQ} onChange={(e) => setCityQ(e.target.value)} placeholder="Cerca una città…" />
               {matches.length > 0 && cityQ !== f.citta && (
-                <div className="absolute z-30 mt-1 w-full rounded-xl overflow-hidden border border-white/15" style={{ background: "rgba(14,17,26,.97)" }}>
+                <div className="theme-popover absolute z-30 mt-1 w-full rounded-xl overflow-hidden border border-white/15" style={{ background: "rgba(14,17,26,.97)" }}>
                   {matches.map((p, i) => (
                     <button key={p.nome + i} onClick={() => { setF({ ...f, citta: p.nome, paese: p.paese, lat: p.lat, lon: p.lon }); setCityQ(p.nome); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-white/10 transition-colors">
                       <span>{countryFlag(p.paese)}</span><span className="text-white truncate">{p.nome}</span><span className="text-xs text-slate-500 truncate">{countryLabel(p.paese)}</span>

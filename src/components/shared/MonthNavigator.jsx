@@ -45,7 +45,7 @@ export function MonthNavigator({ value, onChange, max }) {
         <button onClick={() => onChange(addMonthsMk(value, 1))} disabled={max && value >= max} className="w-9 h-9 shrink-0 rounded-lg grid place-items-center text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-20 disabled:hover:bg-transparent disabled:cursor-not-allowed active:scale-90 transition-all" title="Mese successivo">▶</button>
       </div>
       {open && createPortal(
-        <div ref={panelRef} className="fixed z-[95] w-72 rounded-2xl p-3 shadow-2xl border border-white/15" style={{ top: pos.top, left: pos.left, background: "rgba(14,17,26,0.97)", backdropFilter: "blur(24px)", animation: "popIn .2s cubic-bezier(.22,1,.36,1) both" }}>
+        <div ref={panelRef} className="theme-popover fixed z-[95] w-72 rounded-2xl p-3 shadow-2xl border border-white/15" style={{ top: pos.top, left: pos.left, background: "rgba(14,17,26,0.97)", backdropFilter: "blur(24px)", animation: "popIn .2s cubic-bezier(.22,1,.36,1) both" }}>
           <div className="flex items-center justify-between mb-3">
             <button onClick={() => setViewY((y) => Math.max(YEAR_MIN, y - 1))} disabled={viewY <= YEAR_MIN} className="w-9 h-9 rounded-lg grid place-items-center text-slate-400 hover:text-white hover:bg-white/10 disabled:opacity-30 transition-all">◀</button>
             <div className="flex gap-1">
