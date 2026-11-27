@@ -99,7 +99,7 @@ import { storage } from "./services/storage";
 import { Spinner } from "./components/Spinner";
 import { StyleTag } from "./components/Typography";
 import { marketData } from "./services/markets";
-import { Archive, ArrowDown, ArrowUp, BriefcaseBusiness, CalendarClock, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Menu as MenuIcon, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards, X } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, BriefcaseBusiness, CalendarClock, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Menu as MenuIcon, Plane, Plus, Search, Settings, Tags, Target, Trophy, WalletCards, X } from "lucide-react";
 
 function PersistenceStatus({
   saveState,
@@ -1354,19 +1354,8 @@ useEffect(() => {
         {/* Main Content Area */}
         <main
           ref={mainRef}
-          className="main-pad flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden p-4 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] md:p-8 md:pt-8"
+          className="main-pad flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden p-4 pt-[calc(env(safe-area-inset-top,0px)+0.75rem)] pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] md:p-8 md:pt-8"
         >
-          {/* Topbar Mobile */}
-          <div className="md:hidden flex justify-end mb-3">
-            <button
-              onClick={() => setPalette(true)}
-              aria-label="Cerca"
-              className="w-10 h-10 shrink-0 grid place-items-center text-2xl text-slate-400 hover:text-white active:scale-95 transition-all"
-            >
-              ⌕
-            </button>
-          </div>
-
           <div
             key={page}
             style={{ animation: "pageIn .32s cubic-bezier(.22,1,.36,1)" }}
@@ -1574,6 +1563,18 @@ useEffect(() => {
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setPalette(true);
+                    }}
+                    aria-label="Cerca ovunque"
+                    title="Cerca ovunque"
+                    className="grid min-h-11 min-w-11 place-items-center rounded-xl bg-white/5 text-slate-300 transition-colors hover:bg-white/10 active:bg-white/15"
+                  >
+                    <Search className="h-5 w-5" aria-hidden="true" />
+                  </button>
                   <button
                     type="button"
                     aria-pressed={mobileReorderMode}
