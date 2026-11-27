@@ -34,6 +34,19 @@ export function Impostazioni({
 }) {
   const trash = data.transactions.filter((t) => t.deletedAt);
   const fileRef = useRef(null);
+  const marketSettings = data.settings?.market || {};
+  const configuredMarketSources = [
+    marketSettings.twelvedata,
+    marketSettings.alphavantage,
+    marketSettings.finnhub,
+    marketSettings.proxy,
+  ].filter((value) => value?.trim()).length;
+  const configuredServices = [
+    syncCfg.enabled,
+    data.settings?.drive?.clientId?.trim(),
+    data.settings?.logoDevKey?.trim(),
+    configuredMarketSources > 0,
+  ].filter(Boolean).length;
 
   return (
     <div className="w-full max-w-[2400px] mx-auto">
@@ -44,140 +57,221 @@ export function Impostazioni({
         <h1 className="font-display text-xl sm:text-2xl text-white mt-1">
           Dati, backup e sicurezza
         </h1>
+        <p className="text-sm text-slate-400 mt-2 max-w-2xl">
+          Gestisci preferenze, collegamenti e copie dei tuoi dati. Le sezioni
+          sono tutte visibili e raggiungibili dall'indice.
+        </p>
       </header>
 
-      <PreferenzeSettings data={data} update={update} notify={notify} />
-      <SyncSettings data={data} syncCfg={syncCfg} saveSyncCfg={saveSyncCfg} syncState={syncState} pushNow={pushNow} pullNow={pullNow} pendingPush={pendingPush} />
-      <DriveSettings data={data} update={update} notify={notify} />
-      <LogoDevSettings data={data} update={update} notify={notify} />
-      <QuotesSettings data={data} update={update} notify={notify} />
+      <nav
+        aria-label="Indice delle impostazioni"
+        className="glass-strong sticky top-2 z-20 mb-7 grid grid-cols-2 gap-2 rounded-2xl p-2 shadow-xl sm:grid-cols-4"
+      >
+        <SettingsJump href="#settings-preferences" title="Preferenze" summary={`${data.settings?.theme === "light" ? "Chiaro" : "Scuro"} · ${data.settings?.currency || "EUR"}`} />
+        <SettingsJump href="#settings-services" title="Collegamenti" summary={`${configuredServices}/4 configurati`} />
+        <SettingsJump href="#settings-data" title="Dati e backup" summary={`${backups.length} backup`} />
+        <SettingsJump href="#settings-maintenance" title="Manutenzione" summary={`${trash.length} nel cestino`} />
+      </nav>
 
-      <Card className="p-5 mb-4" hover={false} delay={60}>
-        <h2 className="font-display text-white mb-1">Esporta e importa</h2>
-        <p className="text-xs text-slate-500 mb-4">
-          Tutti i tuoi dati, sempre tuoi. Il salvataggio è comunque automatico e
-          persistente.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <BtnPrimary onClick={exportXLSX}>Excel (.xlsx)</BtnPrimary>
-          <BtnGhost onClick={exportCSV}>CSV</BtnGhost>
-          <BtnGhost onClick={exportJSON}>Backup JSON</BtnGhost>
-          <BtnGhost onClick={() => fileRef.current?.click()}>
-            Importa JSON
-          </BtnGhost>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json"
-            className="hidden"
-            onChange={importJSON}
-          />
-        </div>
-      </Card>
+      <SettingsSection
+        id="settings-preferences"
+        title="Preferenze"
+        description="Aspetto e modalità di visualizzazione."
+        summary={`${data.settings?.theme === "light" ? "Tema chiaro" : "Tema scuro"} · ${data.settings?.currency || "EUR"}`}
+      >
+        <PreferenzeSettings data={data} update={update} notify={notify} />
+      </SettingsSection>
 
-      <Card className="p-5 mb-4" hover={false} delay={120}>
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="font-display text-white">Backup automatici</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Creati periodicamente durante l'uso. Ripristino con un clic.
-            </p>
+      <SettingsSection
+        id="settings-services"
+        title="Collegamenti e servizi"
+        description="Configura sincronizzazione, documenti e servizi esterni."
+        summary={`${configuredServices} di 4 configurati`}
+      >
+        <SyncSettings data={data} syncCfg={syncCfg} saveSyncCfg={saveSyncCfg} syncState={syncState} pushNow={pushNow} pullNow={pullNow} pendingPush={pendingPush} />
+        <DriveSettings data={data} update={update} notify={notify} />
+        <LogoDevSettings data={data} update={update} notify={notify} />
+        <QuotesSettings data={data} update={update} notify={notify} />
+      </SettingsSection>
+
+      <SettingsSection
+        id="settings-data"
+        title="Dati e backup"
+        description="Esporta i tuoi dati, importa un archivio o ripristina una copia."
+        summary={`${backups.length} backup`}
+      >
+        <Card className="p-5 mb-4" hover={false} delay={60}>
+          <h2 className="font-display text-white mb-1">Esporta e importa</h2>
+          <p className="text-xs text-slate-500 mb-4">
+            Tutti i tuoi dati, sempre tuoi. Il salvataggio è comunque automatico e
+            persistente.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <BtnPrimary onClick={exportXLSX}>Excel (.xlsx)</BtnPrimary>
+            <BtnGhost onClick={exportCSV}>CSV</BtnGhost>
+            <BtnGhost onClick={exportJSON}>Backup JSON</BtnGhost>
+            <BtnGhost onClick={() => fileRef.current?.click()}>
+              Importa JSON
+            </BtnGhost>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={importJSON}
+            />
           </div>
-          <BtnGhost onClick={manualBackup}>Crea ora</BtnGhost>
-        </div>
-        <div className="space-y-2">
-          {backups.map((b) => (
-            <div
-              key={b.slot}
-              className="flex items-center justify-between p-3 rounded-xl bg-white/4 border border-white/6"
-            >
-              <div>
-                <p className="text-sm text-white">
-                  {new Date(b.ts).toLocaleString("it-IT")}
-                </p>
-                <p className="text-xs text-slate-500">{b.n} movimenti</p>
-              </div>
-              <BtnGhost
-                onClick={() => restoreBackup(b.slot)}
-                className="py-1.5! text-xs!"
-              >
-                Ripristina
-              </BtnGhost>
-            </div>
-          ))}
-          {backups.length === 0 && (
-            <p className="text-xs text-slate-500">
-              Nessun backup ancora: verranno creati automaticamente mentre usi
-              l'app.
-            </p>
-          )}
-        </div>
-      </Card>
+        </Card>
 
-      <Card className="p-5 mb-4" hover={false} delay={180}>
-        <h2 className="font-display text-white mb-1">Cestino</h2>
-        <p className="text-xs text-slate-500 mb-3">
-          I movimenti eliminati restano qui finché non decidi tu.
-        </p>
-        <div className="space-y-2">
-          {trash.map((t) => (
-            <div
-              key={t.id}
-              className="flex items-center justify-between p-3 rounded-xl bg-white/4 border border-white/6"
-            >
-              <div className="min-w-0">
-                <p className="text-sm text-white truncate">
-                  {t.note || catById[t.categoria]?.nome} · {eur(t.importo)}
-                </p>
-                <p className="text-xs text-slate-500">
-                  Eliminato il{" "}
-                  {new Date(t.deletedAt).toLocaleDateString("it-IT")}
-                </p>
-              </div>
-              <div className="flex gap-2 shrink-0">
+        <Card className="p-5 mb-4" hover={false} delay={120}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="font-display text-white">Backup automatici</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Creati periodicamente durante l'uso. Ripristino con un clic.
+              </p>
+            </div>
+            <BtnGhost onClick={manualBackup}>Crea ora</BtnGhost>
+          </div>
+          <div className="space-y-2">
+            {backups.map((b) => (
+              <div
+                key={b.slot}
+                className="flex items-center justify-between p-3 rounded-xl bg-white/4 border border-white/6"
+              >
+                <div>
+                  <p className="text-sm text-white">
+                    {new Date(b.ts).toLocaleString("it-IT")}
+                  </p>
+                  <p className="text-xs text-slate-500">{b.n} movimenti</p>
+                </div>
                 <BtnGhost
-                  onClick={() => restoreTx(t.id)}
+                  onClick={() => restoreBackup(b.slot)}
                   className="py-1.5! text-xs!"
                 >
                   Ripristina
                 </BtnGhost>
-                <button
-                  onClick={() => hardDelete(t.id)}
-                  className="text-xs text-rose-300/80 hover:text-rose-300 px-2 transition-colors"
-                >
-                  Elimina
-                </button>
               </div>
-            </div>
-          ))}
-          {trash.length === 0 && (
-            <p className="text-xs text-slate-500">Il cestino è vuoto.</p>
-          )}
-        </div>
-      </Card>
+            ))}
+            {backups.length === 0 && (
+              <p className="text-xs text-slate-500">
+                Nessun backup ancora: verranno creati automaticamente mentre usi
+                l'app.
+              </p>
+            )}
+          </div>
+        </Card>
+      </SettingsSection>
 
-      <Card className="p-5" hover={false} delay={240}>
-        <h2 className="font-display text-white mb-1">Zona rossa</h2>
-        <p className="text-xs text-slate-500 mb-3">
-          Azioni irreversibili, con doppia conferma.
-        </p>
-        <BtnGhost
-          onClick={() =>
-            setConfirmDlg({
-              msg: "Azzerare TUTTI i dati e ripartire da zero? Viene creato un backup automatico prima dell'azzeramento.",
-              onOk: async () => {
-                await manualBackup();
-                setData(freshData(false));
-                notify("Dati azzerati (backup disponibile)");
-              },
-            })
-          }
-          className="text-rose-300! hover:bg-rose-500/10!"
-        >
-          Azzera tutti i dati
-        </BtnGhost>
-      </Card>
+      <SettingsSection
+        id="settings-maintenance"
+        title="Manutenzione"
+        description="Recupera o elimina definitivamente i dati."
+        summary={`${trash.length} ${trash.length === 1 ? "movimento" : "movimenti"} nel cestino`}
+      >
+        <Card className="p-5 mb-4" hover={false} delay={180}>
+          <h2 className="font-display text-white mb-1">Cestino</h2>
+          <p className="text-xs text-slate-500 mb-3">
+            I movimenti eliminati restano qui finché non decidi tu.
+          </p>
+          <div className="space-y-2">
+            {trash.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between p-3 rounded-xl bg-white/4 border border-white/6"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm text-white truncate">
+                    {t.note || catById[t.categoria]?.nome} · {eur(t.importo)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Eliminato il{" "}
+                    {new Date(t.deletedAt).toLocaleDateString("it-IT")}
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <BtnGhost
+                    onClick={() => restoreTx(t.id)}
+                    className="py-1.5! text-xs!"
+                  >
+                    Ripristina
+                  </BtnGhost>
+                  <button
+                    onClick={() => hardDelete(t.id)}
+                    className="text-xs text-rose-300/80 hover:text-rose-300 px-2 transition-colors"
+                  >
+                    Elimina
+                  </button>
+                </div>
+              </div>
+            ))}
+            {trash.length === 0 && (
+              <p className="text-xs text-slate-500">Il cestino è vuoto.</p>
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-5" hover={false} delay={240}>
+          <h2 className="font-display text-white mb-1">Zona rossa</h2>
+          <p className="text-xs text-slate-500 mb-3">
+            Azioni irreversibili, con doppia conferma.
+          </p>
+          <BtnGhost
+            onClick={() =>
+              setConfirmDlg({
+                msg: "Azzerare TUTTI i dati e ripartire da zero? Viene creato un backup automatico prima dell'azzeramento.",
+                onOk: async () => {
+                  await manualBackup();
+                  setData(freshData(false));
+                  notify("Dati azzerati (backup disponibile)");
+                },
+              })
+            }
+            className="text-rose-300! hover:bg-rose-500/10!"
+          >
+            Azzera tutti i dati
+          </BtnGhost>
+        </Card>
+      </SettingsSection>
     </div>
+  );
+}
+
+function SettingsJump({ href, title, summary }) {
+  return (
+    <a
+      href={href}
+      className="rounded-xl border border-white/5 px-3 py-2 transition-colors hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400"
+    >
+      <span className="block text-sm font-medium text-white">{title}</span>
+      <span className="mt-0.5 block text-xs text-slate-400">{summary}</span>
+    </a>
+  );
+}
+
+function SettingsSection({ id, title, description, summary, children }) {
+  return (
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      className="mb-8 scroll-mt-28"
+    >
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2
+            id={`${id}-title`}
+            className="font-display text-lg font-semibold text-white"
+          >
+            {title}
+          </h2>
+          <p className="mt-0.5 text-xs text-slate-400">{description}</p>
+        </div>
+        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-300">
+          {summary}
+        </span>
+      </div>
+      {children}
+    </section>
   );
 }
 

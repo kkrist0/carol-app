@@ -4,6 +4,8 @@ import {
   useRef,
   useMemo,
   useCallback,
+  lazy,
+  Suspense,
 } from "react";
 
 import {
@@ -45,25 +47,165 @@ import { CommandPalette } from "./components/CommandPalette";
 import { TxModal } from "./components/shared/TxModal";
 
 // --- PAGINE ---
-import { Dashboard } from "./pages/Dashboard";
-import { Movimenti } from "./pages/Movimenti";
-import { BudgetPage } from "./pages/Budget";
-import { CategoriePage, CatModal } from "./pages/Categorie";
-import { Conti } from "./pages/Conti";
-import { TripExpenseModal, ViaggiPage } from "./pages/Viaggi";
-import { InvestimentiPage } from "./pages/Investimenti";
-import { CarrieraPage } from "./pages/Carriera";
-import { Report } from "./pages/Report";
-import { Obiettivi } from "./pages/Obiettivi";
-import { ArchivioPage } from "./pages/Archivio";
-import { Impostazioni } from "./pages/Impostazioni";
-import { Ricorrenti } from "./pages/Ricorrenti";
-import { Crediti } from "./pages/Crediti";
+const Dashboard = lazy(() =>
+  import("./pages/Dashboard").then((module) => ({ default: module.Dashboard }))
+);
+const Movimenti = lazy(() =>
+  import("./pages/Movimenti").then((module) => ({ default: module.Movimenti }))
+);
+const BudgetPage = lazy(() =>
+  import("./pages/Budget").then((module) => ({ default: module.BudgetPage }))
+);
+const CategoriePage = lazy(() =>
+  import("./pages/Categorie").then((module) => ({ default: module.CategoriePage }))
+);
+const CatModal = lazy(() =>
+  import("./pages/Categorie").then((module) => ({ default: module.CatModal }))
+);
+const Conti = lazy(() =>
+  import("./pages/Conti").then((module) => ({ default: module.Conti }))
+);
+const TripExpenseModal = lazy(() =>
+  import("./pages/Viaggi").then((module) => ({ default: module.TripExpenseModal }))
+);
+const ViaggiPage = lazy(() =>
+  import("./pages/Viaggi").then((module) => ({ default: module.ViaggiPage }))
+);
+const InvestimentiPage = lazy(() =>
+  import("./pages/Investimenti").then((module) => ({ default: module.InvestimentiPage }))
+);
+const CarrieraPage = lazy(() =>
+  import("./pages/Carriera").then((module) => ({ default: module.CarrieraPage }))
+);
+const Report = lazy(() =>
+  import("./pages/Report").then((module) => ({ default: module.Report }))
+);
+const Obiettivi = lazy(() =>
+  import("./pages/Obiettivi").then((module) => ({ default: module.Obiettivi }))
+);
+const ArchivioPage = lazy(() =>
+  import("./pages/Archivio").then((module) => ({ default: module.ArchivioPage }))
+);
+const Impostazioni = lazy(() =>
+  import("./pages/Impostazioni").then((module) => ({ default: module.Impostazioni }))
+);
+const Ricorrenti = lazy(() =>
+  import("./pages/Ricorrenti").then((module) => ({ default: module.Ricorrenti }))
+);
+const Crediti = lazy(() =>
+  import("./pages/Crediti").then((module) => ({ default: module.Crediti }))
+);
 import { storage } from "./services/storage";
 import { Spinner } from "./components/Spinner";
 import { StyleTag } from "./components/Typography";
 import { marketData } from "./services/markets";
 import { Archive, ArrowDown, ArrowUp, BriefcaseBusiness, CalendarClock, ChartColumnBig, ChartNoAxesCombined, HandCoins, LayoutDashboard, Menu as MenuIcon, Plane, Plus, Settings, Tags, Target, Trophy, WalletCards, X } from "lucide-react";
+
+function PersistenceStatus({
+  saveState,
+  syncState,
+  pendingPush,
+  lastSync,
+  hasRemote,
+  onRefresh,
+}) {
+  const localLabel =
+    saveState === "saving"
+      ? "Salvataggio…"
+      : saveState === "error"
+        ? "Errore di salvataggio"
+        : "Salvato in locale";
+  const localTone =
+    saveState === "saving"
+      ? "border-amber-400/20 bg-amber-400/5 text-amber-200"
+      : saveState === "error"
+        ? "border-rose-400/20 bg-rose-400/5 text-rose-200"
+        : "border-emerald-400/20 bg-emerald-400/5 text-emerald-200";
+  const localDot =
+    saveState === "saving"
+      ? "animate-pulse bg-amber-400"
+      : saveState === "error"
+        ? "bg-rose-400"
+        : "bg-emerald-400";
+  const syncBusy = syncState === "pulling" || syncState === "pushing";
+  const cloudLabel =
+    syncState === "pulling"
+      ? "Lettura dal cloud…"
+      : syncState === "pushing"
+        ? "Scrittura nel cloud…"
+        : syncState === "error"
+          ? "Errore di sincronizzazione"
+          : pendingPush
+            ? "Invio in attesa"
+            : syncState === "ok" || lastSync
+              ? "Sincronizzato"
+              : "Non ancora sincronizzato";
+  const cloudTone =
+    syncState === "error"
+      ? "border-rose-400/20 bg-rose-400/5 text-rose-200"
+      : syncBusy || pendingPush
+        ? "border-amber-400/20 bg-amber-400/5 text-amber-200"
+        : syncState === "ok" || lastSync
+          ? "border-emerald-400/20 bg-emerald-400/5 text-emerald-200"
+          : "border-white/10 bg-white/5 text-slate-400";
+  const cloudDot =
+    syncState === "error"
+      ? "bg-rose-400"
+      : syncBusy || pendingPush
+        ? "animate-pulse bg-amber-400"
+        : syncState === "ok" || lastSync
+          ? "bg-emerald-400"
+          : "bg-slate-500";
+  const rowClass =
+    "flex min-h-9 w-full items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[10px] transition-colors";
+
+  return (
+    <div
+      role="group"
+      aria-label="Stato dei salvataggi"
+      className="space-y-1.5"
+    >
+      <div
+        role="status"
+        aria-live="polite"
+        className={`${rowClass} ${localTone}`}
+      >
+        <span className={`h-2 w-2 shrink-0 rounded-full ${localDot}`} />
+        <span className="shrink-0 font-semibold uppercase tracking-wide text-slate-400">
+          Locale
+        </span>
+        <span className="min-w-0 flex-1 truncate">{localLabel}</span>
+      </div>
+      {hasRemote && (
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={syncBusy}
+          title="Rileggi i dati dal cloud"
+          aria-label={`Stato cloud: ${cloudLabel}. Attiva per rileggere i dati dal cloud.`}
+          className={`${rowClass} ${cloudTone} text-left hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 disabled:cursor-wait disabled:opacity-70`}
+        >
+          {syncBusy ? (
+            <Spinner />
+          ) : (
+            <span className={`h-2 w-2 shrink-0 rounded-full ${cloudDot}`} />
+          )}
+          <span className="shrink-0 font-semibold uppercase tracking-wide text-slate-400">
+            Cloud
+          </span>
+          <span aria-live="polite" className="min-w-0 flex-1 truncate">
+            {cloudLabel}
+          </span>
+          {!syncBusy && (
+            <span className="shrink-0 text-slate-400" aria-hidden="true">
+              ↻
+            </span>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
 
 /* ============================================================
    APP PRINCIPALE
@@ -1195,67 +1337,15 @@ useEffect(() => {
                 ⌘K
               </kbd>
             </button>
-            <div className="mt-3 space-y-2">
-              <div
-                className={`flex items-center gap-1.5 text-[11px] transition-colors ${
-                  saveState === "error" ? "text-rose-400" : "text-slate-500"
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    saveState === "saving"
-                      ? "bg-amber-400 animate-pulse"
-                      : saveState === "error"
-                      ? "bg-rose-400"
-                      : "bg-emerald-400"
-                  }`}
-                />
-                {saveState === "saving"
-                  ? "Salvataggio…"
-                  : saveState === "error"
-                  ? "Errore di salvataggio"
-                  : "Salvato in locale"}
-              </div>
-              {repository.hasRemote && (
-                <button
-                  onClick={() => pullNow()}
-                  disabled={
-                    syncState === "pulling" || syncState === "pushing"
-                  }
-                  className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-60 transition-all"
-                  title="Rileggi tutto dal foglio"
-                >
-                  {syncState === "pulling" || syncState === "pushing" ? (
-                    <Spinner />
-                  ) : (
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        syncState === "error"
-                          ? "bg-rose-400"
-                          : pendingPush
-                          ? "bg-amber-400"
-                          : "bg-emerald-400"
-                      }`}
-                    />
-                  )}
-                  <span
-                    className={
-                      syncState === "error" ? "text-rose-300" : "text-slate-400"
-                    }
-                  >
-                    {syncState === "pulling"
-                      ? "Lettura foglio…"
-                      : syncState === "pushing"
-                      ? "Invio al foglio…"
-                      : syncState === "error"
-                      ? "Sync non riuscita"
-                      : pendingPush
-                      ? "In attesa di invio"
-                      : "Sincronizzato"}
-                  </span>
-                  <span className="ml-auto text-slate-600">⟳</span>
-                </button>
-              )}
+            <div className="mt-3">
+              <PersistenceStatus
+                saveState={saveState}
+                syncState={syncState}
+                pendingPush={pendingPush}
+                lastSync={syncCfg.lastSync}
+                hasRemote={repository.hasRemote}
+                onRefresh={pullNow}
+              />
             </div>
           </div>
         </aside>
@@ -1267,13 +1357,7 @@ useEffect(() => {
           className="main-pad flex-1 min-w-0 h-screen overflow-y-auto overflow-x-hidden p-4 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] pb-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] md:p-8 md:pt-8"
         >
           {/* Topbar Mobile */}
-          <div className="md:hidden flex items-center justify-between gap-2 mb-5">
-            <div className="flex items-center gap-2 min-w-0">
-              <Logo size={26} />
-              <span className="font-display text-white truncate">
-                {NAV.find((n) => n.id === page)?.label || "C.A.R.O.L"}
-              </span>
-            </div>
+          <div className="md:hidden flex justify-end mb-3">
             <button
               onClick={() => setPalette(true)}
               aria-label="Cerca"
@@ -1325,6 +1409,17 @@ useEffect(() => {
               </div>
             )}
 
+            <Suspense
+              fallback={
+                <div
+                  role="status"
+                  className="flex min-h-[40vh] items-center justify-center gap-2 text-sm text-slate-400"
+                >
+                  <Spinner />
+                  Caricamento sezione…
+                </div>
+              }
+            >
             {page === "dashboard" && (
               <Dashboard
                 {...{
@@ -1439,6 +1534,7 @@ useEffect(() => {
                 }}
               />
             )}
+            </Suspense>
           </div>
         </main>
       </div>
@@ -1565,69 +1661,14 @@ useEffect(() => {
             </nav>
 
             <div className="shrink-0 border-t border-white/10 px-4 pt-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  setPalette(true);
-                }}
-                className="flex min-h-12 w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-medium text-slate-200 transition-colors active:bg-white/10"
-              >
-                Cerca ovunque <span className="text-lg text-slate-400">⌕</span>
-              </button>
-              <div
-                role="status"
-                className={`flex min-h-10 items-center gap-2 text-xs ${
-                  saveState === "error" ? "text-rose-400" : "text-slate-400"
-                }`}
-              >
-                <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${
-                    saveState === "saving"
-                      ? "animate-pulse bg-amber-400"
-                      : saveState === "error"
-                        ? "bg-rose-400"
-                        : "bg-emerald-400"
-                  }`}
-                />
-                {saveState === "saving"
-                  ? "Salvataggio…"
-                  : saveState === "error"
-                    ? "Errore di salvataggio"
-                    : "Salvato in locale"}
-              </div>
-              {repository.hasRemote && (
-                <button
-                  type="button"
-                  onClick={pullNow}
-                  disabled={syncState === "pulling" || syncState === "pushing"}
-                  className="mb-1 flex min-h-12 w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-slate-200 transition-colors active:bg-white/10 disabled:opacity-60"
-                >
-                  <span
-                    className={`h-2 w-2 shrink-0 rounded-full ${
-                      syncState === "error"
-                        ? "bg-rose-400"
-                        : syncState === "pulling" || syncState === "pushing"
-                          ? "animate-pulse bg-amber-400"
-                          : pendingPush
-                        ? "bg-amber-400"
-                        : "bg-emerald-400"
-                    }`}
-                  />
-                  <span>
-                    {syncState === "pulling"
-                      ? "Aggiornamento…"
-                      : syncState === "pushing"
-                        ? "Invio in corso…"
-                        : syncState === "error"
-                          ? "Riprova sincronizzazione"
-                          : pendingPush
-                            ? "Aggiorna dati · invio in attesa"
-                            : "Aggiorna dati"}
-                  </span>
-                  <span className="ml-auto text-lg text-slate-400" aria-hidden="true">⟳</span>
-                </button>
-              )}
+              <PersistenceStatus
+                saveState={saveState}
+                syncState={syncState}
+                pendingPush={pendingPush}
+                lastSync={syncCfg.lastSync}
+                hasRemote={repository.hasRemote}
+                onRefresh={pullNow}
+              />
             </div>
           </section>
         </div>
@@ -1728,14 +1769,16 @@ useEffect(() => {
 
       {/* Modali Globali */}
       {quickTripExpense && (
-        <TripExpenseModal
-          open={!!quickTripExpense}
-          exp={null}
-          trip={quickTripExpense.trip}
-          accounts={data?.accounts || []}
-          onClose={() => setQuickTripExpense(null)}
-          onSave={saveQuickTripExp}
-        />
+        <Suspense fallback={null}>
+          <TripExpenseModal
+            open={!!quickTripExpense}
+            exp={null}
+            trip={quickTripExpense.trip}
+            accounts={data?.accounts || []}
+            onClose={() => setQuickTripExpense(null)}
+            onSave={saveQuickTripExp}
+          />
+        </Suspense>
       )}
 
       <TxModal
@@ -1748,21 +1791,25 @@ useEffect(() => {
         onDelete={softDelete}
       />
 
-      <CatModal
-        open={!!catEditor}
-        cat={catEditor?.cat}
-        prefillName={catEditor?.prefillName}
-        prefillGroup={catEditor?.prefillGroup}
-        onClose={() => setCatEditor(null)}
-        data={data}
-        update={update}
-        notify={notify}
-        setConfirmDlg={setConfirmDlg}
-        onSaved={(id) => {
-          catEditor?.onDone?.(id);
-          setCatEditor(null);
-        }}
-      />
+      {catEditor && (
+        <Suspense fallback={null}>
+          <CatModal
+            open
+            cat={catEditor.cat}
+            prefillName={catEditor.prefillName}
+            prefillGroup={catEditor.prefillGroup}
+            onClose={() => setCatEditor(null)}
+            data={data}
+            update={update}
+            notify={notify}
+            setConfirmDlg={setConfirmDlg}
+            onSaved={(id) => {
+              catEditor?.onDone?.(id);
+              setCatEditor(null);
+            }}
+          />
+        </Suspense>
+      )}
 
       <Modal
         open={!!confirmDlg}
